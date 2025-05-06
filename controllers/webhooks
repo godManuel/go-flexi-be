@@ -1,0 +1,26 @@
+const asyncHandler = require("../middlewares/async");
+
+exports.createAccount = asyncHandler(async (req, res, next) => {
+  res.json({ status: "ok" });
+  // const event = req.body;
+
+  // console.log("Webhook from StroWallet:", event);
+
+  // if (event.type === "virtual_account.created") {
+  //   const userId = event.data.user_id;
+  //   const accountDetails = event.data.account;
+
+  //   // Update your DB with the virtual account info
+  //   // Example:
+  //   // await db.users.update(userId, { virtualAccount: accountDetails });
+
+  //   console.log(
+  //     `Virtual account created for user ${userId} with account details: ${accountDetails}`
+  //   );
+  // }
+
+  // res.status(200).json({
+  //   success: true,
+  //   data: accountDetails,
+  // });
+});
