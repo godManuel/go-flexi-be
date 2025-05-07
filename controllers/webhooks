@@ -1,33 +1,32 @@
 const asyncHandler = require("../middlewares/async");
+const User = require("../models/User");
+const ErrorResponse = require("../utils/errorResponse");
 
 exports.createAccount = asyncHandler(async (req, res, next) => {
   // res.json({ status: "ok" });
 
-  console.log("📩 Received webhook from Strowallet:");
-  console.log(JSON.stringify(req.body, null, 2)); // Pretty print the payload
+  const event = req.body;
 
-  // Respond with 200 to acknowledge receipt
-  res.status(200).send("Webhook received");
+  console.log("Webhook from StroWallet:", event);
 
-  // const event = req.body;
+  if (event.type === "virtual_account.created") {
+    const userId = event.data.user_id;
+    const accountDetails = event.data.account;
 
-  // console.log("Webhook from StroWallet:", event);
+    // Update your DB with the virtual account info
+    // await db.users.update(userId, { virtualAccount: accountDetails });
+    const virtualAcc = new User(accountDetails);
+    await virtualAcc.save();
 
-  // if (event.type === "virtual_account.created") {
-  //   const userId = event.data.user_id;
-  //   const accountDetails = event.data.account;
+    console.log(
+      `Virtual account created for user ${userId} with account details: ${accountDetails}`
+    );
 
-  //   // Update your DB with the virtual account info
-  //   // Example:
-  //   // await db.users.update(userId, { virtualAccount: accountDetails });
-
-  //   console.log(
-  //     `Virtual account created for user ${userId} with account details: ${accountDetails}`
-  //   );
-  // }
-
-  // res.status(200).json({
-  //   success: true,
-  //   data: accountDetails,
-  // });
+    res.status(200).json({
+      success: true,
+      data: virtualAcc,
+    });
+  } else {
+    return next(new ErrorResponse("Try again!"));
+  }
 });
