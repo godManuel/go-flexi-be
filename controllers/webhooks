@@ -5,28 +5,30 @@ const ErrorResponse = require("../utils/errorResponse");
 exports.createAccount = asyncHandler(async (req, res, next) => {
   // res.json({ status: "ok" });
 
-  const event = req.body;
+  console.log("Received payload:", JSON.stringify(req.body, null, 2));
 
-  console.log("Webhook from StroWallet:", event);
+  // const event = req.body;
 
-  if (event.type === "virtual_account.created") {
-    const userId = event.data.user_id;
-    const accountDetails = event.data.account;
+  // console.log("Webhook from StroWallet:", event);
 
-    // Update your DB with the virtual account info
-    // await db.users.update(userId, { virtualAccount: accountDetails });
-    const virtualAcc = new User(accountDetails);
-    await virtualAcc.save();
+  // if (event.type === "virtual_account.created") {
+  //   const userId = event.data.user_id;
+  //   const accountDetails = event.data.account;
 
-    console.log(
-      `Virtual account created for user ${userId} with account details: ${accountDetails}`
-    );
+  //   // Update your DB with the virtual account info
+  //   // await db.users.update(userId, { virtualAccount: accountDetails });
+  //   const virtualAcc = new User(accountDetails);
+  //   await virtualAcc.save();
 
-    res.status(200).json({
-      success: true,
-      data: virtualAcc,
-    });
-  } else {
-    return next(new ErrorResponse("Try again!"));
-  }
+  //   console.log(
+  //     `Virtual account created for user ${userId} with account details: ${accountDetails}`
+  //   );
+
+  //   res.status(200).json({
+  //     success: true,
+  //     data: virtualAcc,
+  //   });
+  // } else {
+  //   return next(new ErrorResponse("Try again!"));
+  // }
 });
