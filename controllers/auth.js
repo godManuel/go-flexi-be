@@ -17,7 +17,7 @@ exports.createUser = asyncHandler(async (req, res, next) => {
     email: user.email,
     phone: user.phoneNumber,
     public_key: process.env.STROWALLET_PUBLIC_KEY,
-    webhook_url: `https://04a8-105-113-109-65.ngrok-free.app/webhooks/create-account`,
+    webhook_url: `https://go-flexi-be.onrender.com/webhooks/create-account`,
   };
 
   try {
