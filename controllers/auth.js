@@ -22,7 +22,7 @@ exports.createUser = asyncHandler(async (req, res, next) => {
 
   try {
     const response = await axios.post(
-      "https://strowallet.com/api/virtual-bank/new-customer/",
+      "https://strowallet.com/api/virtual-bank/safehaven/",
       payload,
       {
         headers: {

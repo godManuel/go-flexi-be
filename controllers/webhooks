@@ -1,7 +1,13 @@
 const asyncHandler = require("../middlewares/async");
 
 exports.createAccount = asyncHandler(async (req, res, next) => {
-  res.json({ status: "ok" });
+  // res.json({ status: "ok" });
+
+  console.log("📩 Received webhook from Strowallet:");
+  console.log(JSON.stringify(req.body, null, 2)); // Pretty print the payload
+
+  // Respond with 200 to acknowledge receipt
+  res.status(200).send("Webhook received");
 
   // const event = req.body;
 
