@@ -1,34 +1,36 @@
 const asyncHandler = require("../middlewares/async");
-const User = require("../models/User");
+const Deposit = require("../models/Deposit");
 const ErrorResponse = require("../utils/errorResponse");
 
 exports.createAccount = asyncHandler(async (req, res, next) => {
-  // res.json({ status: "ok" });
+  const input = req.body;
 
-  console.log("Received payload:", JSON.stringify(req.body, null, 2));
+  if (!input.sessionId) {
+    console.error("⚠️ Webhook missing sessionId");
+    return res
+      .status(400)
+      .json({ status: "fail", message: "Missing sessionId" });
+  }
 
-  // const event = req.body;
+  const deposit = await Deposit.create({
+    sessionId: input.sessionId,
+    accountNumber: input.accountNumber,
+    tranRemarks: input.tranRemarks,
+    transactionAmount: input.transactionAmount,
+    settledAmount: input.settledAmount,
+    feeAmount: input.feeAmount,
+    vatAmount: input.vatAmount,
+    currency: input.currency,
+    initiationTranRef: input.initiationTranRef,
+    settlementId: input.settlementId,
+    sourceAccountNumber: input.sourceAccountNumber,
+    sourceAccountName: input.sourceAccountName,
+    sourceBankName: input.sourceBankName,
+    channelId: input.channelId,
+    tranDateTime: input.tranDateTime,
+  });
 
-  // console.log("Webhook from StroWallet:", event);
-
-  // if (event.type === "virtual_account.created") {
-  //   const userId = event.data.user_id;
-  //   const accountDetails = event.data.account;
-
-  //   // Update your DB with the virtual account info
-  //   // await db.users.update(userId, { virtualAccount: accountDetails });
-  //   const virtualAcc = new User(accountDetails);
-  //   await virtualAcc.save();
-
-  //   console.log(
-  //     `Virtual account created for user ${userId} with account details: ${accountDetails}`
-  //   );
-
-  //   res.status(200).json({
-  //     success: true,
-  //     data: virtualAcc,
-  //   });
-  // } else {
-  //   return next(new ErrorResponse("Try again!"));
-  // }
+  await deposit.save();
+  console.log(`✅ Webhook saved for sessionId: ${input.sessionId}`);
+  res.status(200).json({ status: "success", deposit });
 });
