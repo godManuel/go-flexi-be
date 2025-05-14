@@ -12,21 +12,21 @@ exports.stroWallet = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse("Missing sessionID", 400));
   }
 
-  const url = "https://strowallet.com/api/verifysessionid/";
+  // const url = "https://strowallet.com/api/verifysessionid/";
 
   try {
-    const response = await axios.get(url, {
-      headers: {
-        accept: "application/json",
-      },
-      params: {
-        public_key: process.env.STROWALLET_PUBLIC_KEY,
-        sessionId: input.sessionId,
-        amount: input.settledAmount,
-      },
-    });
+    // const response = await axios.get(url, {
+    //   headers: {
+    //     accept: "application/json",
+    //   },
+    //   params: {
+    //     public_key: process.env.STROWALLET_PUBLIC_KEY,
+    //     sessionId: input.sessionId,
+    //     amount: input.settledAmount,
+    //   },
+    // });
 
-    console.log(response.data);
+    // console.log(response.data);
 
     let user = await User.findOne({ accountNumber: input.accountNumber });
     console.log(user);
