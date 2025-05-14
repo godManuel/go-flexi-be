@@ -1,36 +1,20 @@
-const { calcNetAmount } = require("../utils/calcAmount");
-const axios = require("axios");
-const asyncHandler = require("../middlewares/async");
-const Deposit = require("../models/Deposit");
+const { verifySessionId } = require("../services/stroWalletService");
 const User = require("../models/User");
+const Deposit = require("../models/Deposit");
 const ErrorResponse = require("../utils/errorResponse");
+const calcNetAmount = require("../utils/calcNetAmount"); // Assuming this is defined in utils
 
-exports.stroWallet = asyncHandler(async (req, res, next) => {
+exports.stroWallet = async (req, res, next) => {
   const input = req.body;
 
-  if (!input.sessionId) {
-    console.error("Webhook missing sessionId");
-    return next(new ErrorResponse("Missing sessionID", 400));
-  }
-
-  // const url = "https://strowallet.com/api/verifysessionid/";
-
   try {
-    // const response = await axios.get(url, {
-    //   headers: {
-    //     accept: "application/json",
-    //   },
-    //   params: {
-    //     public_key: process.env.STROWALLET_PUBLIC_KEY,
-    //     sessionId: input.sessionId,
-    //     amount: input.settledAmount,
-    //   },
-    // });
-
-    // console.log(response.data);
+    const verificationData = await verifySessionId(
+      input.sessionId,
+      input.settledAmount
+    );
+    console.log("Verification:", verificationData);
 
     let user = await User.findOne({ accountNumber: input.accountNumber });
-    console.log(user);
     if (!user) return next(new ErrorResponse("Not account owner!", 400));
 
     const deposit = await Deposit.create({
@@ -52,19 +36,15 @@ exports.stroWallet = asyncHandler(async (req, res, next) => {
       user,
     });
 
-    await deposit.save();
-
     const { netAmount } = calcNetAmount(deposit.settledAmount);
 
-    const newAcctBal = netAmount.toFixed(2) + user.accountBalance;
+    const newAcctBal = (parseFloat(user.accountBalance) + netAmount).toFixed(2);
 
     const updatedUser = await User.findOneAndUpdate(
       { _id: user.id },
       { $set: { accountBalance: newAcctBal } },
       { new: true }
     );
-
-    console.log(updatedUser);
 
     res.status(201).json({ status: "success", updatedUser });
   } catch (error) {
@@ -75,4 +55,4 @@ exports.stroWallet = asyncHandler(async (req, res, next) => {
       )
     );
   }
-});
+};
