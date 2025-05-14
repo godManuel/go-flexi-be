@@ -10,7 +10,7 @@ exports.stroWallet = async (req, res, next) => {
   try {
     const verificationData = await verifySessionId(
       input.sessionId,
-      input.settledAmount
+      input.transactionAmount
     );
     console.log("Verification:", verificationData);
 

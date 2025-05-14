@@ -2,6 +2,8 @@
 const axios = require("axios");
 
 exports.verifySessionId = async (sessionId, amount) => {
+  const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
+
   const url = "https://strowallet.com/api/verifysessionid/";
 
   const response = await axios.get(url, {
@@ -9,7 +11,7 @@ exports.verifySessionId = async (sessionId, amount) => {
       accept: "application/json",
     },
     params: {
-      public_key: process.env.STROWALLET_PUBLIC_KEY,
+      public_key: STRO_PUB_KEY,
       sessionId,
       amount,
     },

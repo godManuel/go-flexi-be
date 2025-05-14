@@ -1,3 +1,4 @@
+require("dotenv").config();
 // Calling third-party packages
 const cors = require("cors");
 const hpp = require("hpp");
@@ -6,7 +7,6 @@ const helmet = require("helmet");
 const express = require("express");
 
 const app = express();
-require("dotenv").config();
 
 // Calling routes
 const auth = require("./routes/auth");
