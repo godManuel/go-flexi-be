@@ -1,4 +1,4 @@
-// services/stroWalletService.js
+require("dotenv").config();
 const axios = require("axios");
 
 exports.verifySessionId = async (sessionId, amount) => {
