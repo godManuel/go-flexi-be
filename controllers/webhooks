@@ -1,3 +1,5 @@
+import { calcNetAmount } from "../utils/calcAmount";
+
 const axios = require("axios");
 const asyncHandler = require("../middlewares/async");
 const Deposit = require("../models/Deposit");
@@ -53,13 +55,13 @@ exports.stroWallet = asyncHandler(async (req, res, next) => {
 
     await deposit.save();
 
-    const userBal = user.accountBalance;
-    console.log(user.accountBalance);
-    const newBal = parseInt(deposit.settledAmount) + userBal;
+    const { netAmount } = calcNetAmount(deposit.settledAmount);
+
+    const newAcctBal = netAmount.toFixed(2) + user.accountBalance;
 
     const updatedUser = await User.findOneAndUpdate(
       { _id: user.id },
-      { $set: { accountBalance: newBal } },
+      { $set: { accountBalance: newAcctBal } },
       { new: true }
     );
 
