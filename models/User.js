@@ -27,13 +27,16 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
     phoneNumber: {
+      type: String,
+      required: true,
+    },
+    accountName: String,
+    accountNumber: String,
+    accountBalance: {
       type: Number,
-      required: true,
+      default: 0,
     },
-    dateOfBirth: {
-      type: Date,
-      required: true,
-    },
+    bankName: String,
     gender: {
       type: String,
       enum: ["male", "female"],
@@ -61,7 +64,7 @@ userSchema.methods.getSignedToken = function () {
     {
       id: this.id,
       email: this.email,
-      role: this.role,
+      accountNumber: this.accountNumber,
     },
     process.env.JWT_SECRET,
     {

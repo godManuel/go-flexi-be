@@ -1,7 +1,9 @@
 const express = require("express");
-const { createAccount } = require("../controllers/webhooks");
+const { stroWallet } = require("../controllers/webhooks");
 const router = express.Router();
 
-router.post("/create-account", createAccount);
+const { protect } = require("../middlewares/auth");
+
+router.post("/strowallet", protect, stroWallet);
 
 module.exports = router;
