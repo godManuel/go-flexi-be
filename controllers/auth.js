@@ -47,7 +47,7 @@ exports.createUser = asyncHandler(async (req, res, next) => {
       email,
       password,
       phoneNumber,
-      accountName: result.account_name,
+      accountName: req.body.fullName,
       accountNumber: result.account_number,
       bankName: result.bank_name,
     });
@@ -56,7 +56,7 @@ exports.createUser = asyncHandler(async (req, res, next) => {
 
     await user.save();
 
-    console.log(token);
+    // console.log(token);
     res.status(200).json({ success: true, data: user });
   } catch (error) {
     console.error(
