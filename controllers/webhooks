@@ -2,18 +2,12 @@ const { verifySessionId } = require("../services/stroWalletService");
 const User = require("../models/User");
 const Deposit = require("../models/Deposit");
 const ErrorResponse = require("../utils/errorResponse");
-const calcNetAmount = require("../utils/calcNetAmount"); // Assuming this is defined in utils
+const { calcNetAmount } = require("../utils/calcNetAmount"); // Assuming this is defined in utils
 
 exports.stroWallet = async (req, res, next) => {
   const input = req.body;
 
   try {
-    const verificationData = await verifySessionId(
-      input.sessionId,
-      input.transactionAmount
-    );
-    console.log("Verification:", verificationData);
-
     let user = await User.findOne({ accountNumber: input.accountNumber });
     if (!user) return next(new ErrorResponse("Not account owner!", 400));
 

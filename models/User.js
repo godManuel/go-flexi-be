@@ -37,6 +37,10 @@ const userSchema = new mongoose.Schema(
       default: 0,
     },
     bankName: String,
+    currency: {
+      type: String,
+      default: "NGN",
+    },
     gender: {
       type: String,
       enum: ["male", "female"],

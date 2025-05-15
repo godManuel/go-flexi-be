@@ -12,8 +12,8 @@ exports.verifySessionId = async (sessionID, amount) => {
     },
     params: {
       public_key: STRO_PUB_KEY,
-      sessionID,
       amount,
+      sessionID,
     },
   });
 
