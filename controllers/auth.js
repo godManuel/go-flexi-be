@@ -58,7 +58,13 @@ exports.createUser = asyncHandler(async (req, res, next) => {
     await user.save();
 
     // console.log(token);
-    res.status(200).json({ success: true, data: user });
+    res.status(200).json({ 
+      success: true, 
+      user: {
+        id: user.id 
+        email: user.email,
+        role: user.role,
+      } });
   } catch (error) {
     console.error(
       "Error sending request to StroWallet:",
@@ -90,10 +96,6 @@ exports.loginUser = asyncHandler(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    data: {
-      email: user.email,
-      role: user.role,
-      token,
-    },
+    user
   });
 });
