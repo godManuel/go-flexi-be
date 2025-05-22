@@ -1,7 +1,8 @@
 const express = require("express");
-const { walletTransfer } = require("../controllers/transfer");
+const { bankTransfer } = require("../controllers/transfer");
+const { protect, authorize } = require("../middlewares/auth");
 const router = express.Router();
 
-// router.post("/wallet-transfer", walletTransfer);
+router.post("/", protect, bankTransfer);
 
 module.exports = router;

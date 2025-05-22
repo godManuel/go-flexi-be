@@ -24,7 +24,7 @@ exports.createUser = asyncHandler(async (req, res, next) => {
 
     // Call StroWallet API
     const response = await axios.post(
-      "https://strowallet.com/api/virtual-bank/safehaven/",
+      "https://strowallet.com/api/virtual-bank/paga/",
       payload,
       {
         headers: {
@@ -47,6 +47,7 @@ exports.createUser = asyncHandler(async (req, res, next) => {
       email,
       password,
       phoneNumber,
+      // accountName: req.body.fullName,
       accountName: req.body.fullName,
       accountNumber: result.account_number,
       bankName: result.bank_name,
@@ -65,4 +66,34 @@ exports.createUser = asyncHandler(async (req, res, next) => {
     );
     return next(new ErrorResponse("Failed to create virtual account", 500));
   }
+});
+
+exports.loginUser = asyncHandler(async (req, res, next) => {
+  if (!req.body.email || !req.body.password) {
+    return next(new ErrorResponse("Please enter an email and password", 400));
+  }
+
+  const user = await User.findOne({ email: req.body.email }).select(
+    "+password"
+  );
+  if (!user) return next(new ErrorResponse("Email or password incorrect", 401));
+
+  const isMatch = await user.matchPassword(req.body.password);
+
+  if (!isMatch)
+    return next(new ErrorResponse("Email or password incorrect", 401));
+
+  const emailOTP = await user.getEmailOTP();
+  await user.save();
+
+  const token = user.getSignedToken();
+
+  res.status(200).json({
+    success: true,
+    data: {
+      email: user.email,
+      role: user.role,
+      token,
+    },
+  });
 });
