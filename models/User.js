@@ -46,8 +46,8 @@ const userSchema = new mongoose.Schema(
       enum: ["male", "female"],
     },
     address: String,
-    emailOTP: String,
-    emailOTPExpire: Date,
+    // emailOTP: String,
+    // emailOTPExpire: Date,
   },
   { timestamps: true }
 );
@@ -83,24 +83,24 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 };
 
 /* TASK -> Generate user OTP for Email Verification */
-userSchema.methods.getEmailOTP = async function () {
-  let otp = Math.floor(100000 + Math.random() * 900000);
-  otp = otp.toString();
+// userSchema.methods.getEmailOTP = async function () {
+//   let otp = Math.floor(100000 + Math.random() * 900000);
+//   otp = otp.toString();
 
-  // Encrypt OTP and save in current user's database
-  const salt = await bcrypt.genSalt(10);
-  this.emailOTP = await bcrypt.hash(otp, salt);
+//   // Encrypt OTP and save in current user's database
+//   const salt = await bcrypt.genSalt(10);
+//   this.emailOTP = await bcrypt.hash(otp, salt);
 
-  // Set the OTP Expiration to 30 minutes ahead
-  this.emailOTPExpire = Date.now() + 30 * 60 * 1000;
+//   // Set the OTP Expiration to 30 minutes ahead
+//   this.emailOTPExpire = Date.now() + 30 * 60 * 1000;
 
-  return otp;
-};
+//   return otp;
+// };
 
 /* TASK -> Compare emailOTP with req.body.emailOTP  */
-userSchema.methods.verifyEmailOTP = async function (enteredOTP) {
-  return await bcrypt.compare(enteredOTP, this.emailOTP);
-};
+// userSchema.methods.verifyEmailOTP = async function (enteredOTP) {
+//   return await bcrypt.compare(enteredOTP, this.emailOTP);
+// };
 
 const User = mongoose.model("User", userSchema);
 

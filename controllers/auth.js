@@ -53,18 +53,17 @@ exports.createUser = asyncHandler(async (req, res, next) => {
       bankName: result.bank_name,
     });
 
-    const token = user.getSignedToken();
-
     await user.save();
 
     // console.log(token);
-    res.status(200).json({ 
-      success: true, 
+    res.status(200).json({
+      success: true,
       user: {
-        id: user.id, 
+        id: user.id,
         email: user.email,
         role: user.role,
-      } });
+      },
+    });
   } catch (error) {
     console.error(
       "Error sending request to StroWallet:",
@@ -89,13 +88,11 @@ exports.loginUser = asyncHandler(async (req, res, next) => {
   if (!isMatch)
     return next(new ErrorResponse("Email or password incorrect", 401));
 
-  const emailOTP = await user.getEmailOTP();
-  await user.save();
-
   const token = user.getSignedToken();
 
   res.status(200).json({
     success: true,
-    user
+    user,
+    token,
   });
 });
