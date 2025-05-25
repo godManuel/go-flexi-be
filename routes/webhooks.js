@@ -1,5 +1,5 @@
 const express = require("express");
-const { stroWallet } = require("../controllers/webhooks");
+const { stroWallet } = require("../controllers/stro-webhooks.js");
 const router = express.Router();
 
 // const { protect } = require("../middlewares/auth");

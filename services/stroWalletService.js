@@ -1,7 +1,7 @@
 require("dotenv").config();
 const axios = require("axios");
 
-exports.verifySessionId = async (sessionID, amount) => {
+exports.verifySessionId = async (amount, sessionID) => {
   const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
 
   const url = "https://strowallet.com/api/verifysessionid/";
