@@ -25,10 +25,15 @@ const userSchema = new mongoose.Schema(
       // ],
       select: false,
       required: true,
+      minlength: [8, "Password must be at least 8 characters long"],
     },
     phoneNumber: {
       type: String,
       required: true,
+    },
+    country: {
+      type: String,
+      default: "nigeria",
     },
     accountName: String,
     accountNumber: String,
