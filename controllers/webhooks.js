@@ -12,7 +12,7 @@ exports.stroWallet = async (req, res, next) => {
       input.transactionAmount,
       input.sessionId
     );
-    // console.log("Verification:", verificationData);
+    console.log("Verification:", verificationData);
 
     let user = await User.findOne({ accountNumber: input.accountNumber });
     if (!user) return next(new ErrorResponse("Not account owner!", 400));
