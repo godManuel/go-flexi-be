@@ -27,9 +27,11 @@ const userSchema = new mongoose.Schema(
       required: true,
       minlength: [8, "Password must be at least 8 characters long"],
     },
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
     phoneNumber: {
       type: String,
-      required: true,
+      // required: true,
     },
     country: {
       type: String,
@@ -51,6 +53,11 @@ const userSchema = new mongoose.Schema(
       enum: ["male", "female"],
     },
     address: String,
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    }
     // emailOTP: String,
     // emailOTPExpire: Date,
   },
@@ -67,6 +74,27 @@ userSchema.pre("save", async function (next) {
   this.password = await bcrypt.hash(this.password, salt);
 });
 
+/* TASK -> Generate user reset password token */
+userSchema.methods.getResetPasswordToken = async function () {
+  // Generate a token
+  let otp = Math.floor(10000 + Math.random() * 90000);
+  otp = otp.toString();
+
+  // Encrypt OTP and save in current user's database
+  const salt = await bcrypt.genSalt(10);
+  this.resetPasswordToken = await bcrypt.hash(otp, salt);
+
+  // Set the resetPasswordExpire
+  this.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // Token valid for 10 minutes
+
+  return otp;
+}
+
+/* TASK -> Compare resetPasswordToken with req.body.resetPasswordToken */
+userSchema.methods.verifyResetPasswordToken = async function (enteredOTP) {
+  return await bcrypt.compare(enteredOTP, this.resetPasswordToken);
+};
+
 /* TASK -> Sign user token */
 userSchema.methods.getSignedToken = function () {
   return jwt.sign(
@@ -74,6 +102,7 @@ userSchema.methods.getSignedToken = function () {
       id: this.id,
       email: this.email,
       accountNumber: this.accountNumber,
+      role: this.role
     },
     process.env.JWT_SECRET,
     {
@@ -88,24 +117,24 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 };
 
 /* TASK -> Generate user OTP for Email Verification */
-// userSchema.methods.getEmailOTP = async function () {
-//   let otp = Math.floor(100000 + Math.random() * 900000);
-//   otp = otp.toString();
+userSchema.methods.getEmailOTP = async function () {
+  let otp = Math.floor(100000 + Math.random() * 900000);
+  otp = otp.toString();
 
-//   // Encrypt OTP and save in current user's database
-//   const salt = await bcrypt.genSalt(10);
-//   this.emailOTP = await bcrypt.hash(otp, salt);
+  // Encrypt OTP and save in current user's database
+  const salt = await bcrypt.genSalt(10);
+  this.emailOTP = await bcrypt.hash(otp, salt);
 
-//   // Set the OTP Expiration to 30 minutes ahead
-//   this.emailOTPExpire = Date.now() + 30 * 60 * 1000;
+  // Set the OTP Expiration to 30 minutes ahead
+  this.emailOTPExpire = Date.now() + 30 * 60 * 1000;
 
-//   return otp;
-// };
+  return otp;
+};
 
 /* TASK -> Compare emailOTP with req.body.emailOTP  */
-// userSchema.methods.verifyEmailOTP = async function (enteredOTP) {
-//   return await bcrypt.compare(enteredOTP, this.emailOTP);
-// };
+userSchema.methods.verifyEmailOTP = async function (enteredOTP) {
+  return await bcrypt.compare(enteredOTP, this.emailOTP);
+};
 
 const User = mongoose.model("User", userSchema);
 
