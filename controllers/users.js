@@ -37,21 +37,21 @@ exports.getAllUsers = asyncHandler(async (req, res, next) => {
 
 // Update user account balance if user account number is available in database. Only admin can update user account balance
 exports.updateUserBalance = asyncHandler(async (req, res, next) => {
-  const { accountNumber, amount } = req.body;
-  if (!accountNumber || !amount) {
+  const { email, amount } = req.body;
+  if (!email || !amount) {
     return next(
-      new ErrorResponse("Account number and amount are required", 400)
+      new ErrorResponse("Email and amount are required", 400)
     );
   }
 
-  const user = await User.findOne({ accountNumber });
+  const user = await User.findOne({ email });
   if (!user) {
     return next(
-      new ErrorResponse("User not found with this account number", 404)
+      new ErrorResponse("User not found", 404)
     );
   }
 
-  user.accountBalance += amount;
+  user.accountBalance += +amount;
   await user.save();
 
   res.status(200).json({
