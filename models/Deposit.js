@@ -20,7 +20,7 @@ const depositSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
   },
-});
+}, { timestamps: true });
 
 const Deposit = mongoose.model("Deposit", depositSchema);
 

@@ -48,6 +48,12 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "NGN",
     },
+    transactions: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Deposit",
+      },
+    ],
     gender: {
       type: String,
       enum: ["male", "female"],
@@ -57,9 +63,9 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["user", "admin"],
       default: "user",
-    }
-    // emailOTP: String,
-    // emailOTPExpire: Date,
+    },
+    emailOTP: String,
+    emailOTPExpire: Date,
   },
   { timestamps: true }
 );

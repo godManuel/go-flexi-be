@@ -89,14 +89,68 @@ exports.loginUser = asyncHandler(async (req, res, next) => {
   if (!isMatch)
     return next(new ErrorResponse("Email or password incorrect", 401));
 
+  const emailOTP = await user.getEmailOTP();
+  await user.save();
+
+  try {
+    await sendEmail(
+      user.email,
+      `Your Verification Code is ${emailOTP}`,
+      "otp-verification",
+      {
+        name: user.fullName,
+        expiryTime: user.emailOTPExpire,
+        otp: emailOTP,
+      }
+    );
+
+    res.status(200).json({
+      success: true,
+      data: {
+        email: user.email,
+        role: user.role,
+        message: "A confirmation code has been sent to your email",
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    return next(new ErrorResponse("Email could not be sent", 500));
+  }
+});
+
+
+// @DESC        Verify User Login via Email OTP
+// @ROUTE       POST  /api/v1/auth/verify-login
+// @ACCESS      Private
+exports.verifyLoginOTP = asyncHandler(async (req, res, next) => {
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) return next(new ErrorResponse("User not found", 404));
+
+  const verifiedOTP = await user.verifyEmailOTP(req.body.emailOTP);
+  if (!verifiedOTP) return next(new ErrorResponse("Invalid OTP"));
+
+  if (user.emailOTPExpire < Date.now()) {
+    await user.delete();
+    next(new ErrorResponse("OTP Expired! Request a new one", 400));
+  }
+
+  user.emailOTP = undefined;
+  user.emailOTPExpire = undefined;
+
   const token = user.getSignedToken();
+
+  await user.save();
 
   res.status(200).json({
     success: true,
-    user,
-    token,
+    data: {
+      email: user.email,
+      role: user.role,
+      token,
+    },
   });
 });
+
 
 // @DESC        Request Password Reset
 // @ROUTE       POST  /api/v1/auth/request-password-reset

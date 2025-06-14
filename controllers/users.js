@@ -94,3 +94,41 @@ exports.createAdmin = asyncHandler(async (req, res, next) => {
     },
   });
 });
+
+// Get transactions for a user
+exports.getUserTransactions = asyncHandler(async (req, res, next) => {
+  const userId = req.params.id;
+  const loggedInUserId = req.user.id; // Assuming req.user is set by authentication middleware
+
+  if (userId !== loggedInUserId) {
+    return next(new ErrorResponse("Unauthorized access", 403));
+  }
+
+  const user = await User.findById(userId).populate("transactions");
+  if (!user) {
+    return next(new ErrorResponse("User not found", 404));
+  }
+
+  res.status(200).json({
+    success: true,
+    transactions: user.transactions,
+  });
+});
+
+// Get all users transactions for admin 
+exports.getAllUserTransactions = asyncHandler(async (req, res, next) => {
+  const users = await User.find().populate("transactions");
+  if (!users || users.length === 0) {
+    return next(new ErrorResponse("No users found", 404));
+  }
+
+  const allTransactions = users.flatMap(user => ({
+    userId: user.id,
+    transactions: user.transactions,
+  }));
+
+  res.status(200).json({
+    success: true,
+    transactions: allTransactions,
+  });
+});

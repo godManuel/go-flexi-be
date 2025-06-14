@@ -40,11 +40,15 @@ exports.stroWallet = async (req, res, next) => {
 
     const newAcctBal = (parseFloat(user.accountBalance) + netAmount).toFixed(2);
 
-    const updatedUser = await User.findOneAndUpdate(
-      { _id: user.id },
-      { $set: { accountBalance: newAcctBal } },
-      { new: true }
-    );
+    // const updatedUser = await User.findOneAndUpdate(
+    //   { _id: user.id },
+    //   { $set: { accountBalance: newAcctBal } },
+    //   { new: true }
+    // );
+    user.accountBalance = newAcctBal;
+    user.transactions.push(deposit._id);
+    await user.save();
+
 
     res.status(201).json({ status: "success", updatedUser });
   } catch (error) {

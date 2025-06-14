@@ -4,6 +4,7 @@ const {
   loginUser,
   requestPasswordReset,
   resetPassword,
+  verifyLoginOTP,
   verifyPasswordOTP,
 } = require("../controllers/auth");
 const router = express.Router();
@@ -16,7 +17,10 @@ router.post("/login", loginUser);
 router.post("/request-password-reset", requestPasswordReset);
 router.post("/reset-password", resetPassword);
 
-router.route("/verify-otp").post(verifyPasswordOTP);
+router.route("/verify-password-otp").post(verifyPasswordOTP);
+
+// @POST - Verify Login OTP 
+router.route("/verify-login-otp").post(verifyLoginOTP);
 
 // router.post("/update-password", updatePassword);
 // router.post("/update-profile", updateProfile);
