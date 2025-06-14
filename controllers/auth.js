@@ -130,7 +130,6 @@ exports.verifyLoginOTP = asyncHandler(async (req, res, next) => {
   if (!verifiedOTP) return next(new ErrorResponse("Invalid OTP"));
 
   if (user.emailOTPExpire < Date.now()) {
-    await user.delete();
     next(new ErrorResponse("OTP Expired! Request a new one", 400));
   }
 
