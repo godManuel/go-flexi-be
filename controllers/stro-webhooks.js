@@ -45,6 +45,19 @@ exports.stroWallet = async (req, res, next) => {
     //   { $set: { accountBalance: newAcctBal } },
     //   { new: true }
     // );
+
+     const transaction = await Transaction.create({
+      user: user._id,
+      type: "deposit",
+      amount: newAcctBal,
+      reference: deposit._id,
+      status: "successful",
+      description: input.tranRemarks,
+      date: deposit.tranDateTime,
+      // Add other fields as needed
+    });
+
+
     user.accountBalance = newAcctBal;
     user.transactions.push(deposit._id);
     await user.save();
