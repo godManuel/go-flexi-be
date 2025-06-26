@@ -12,7 +12,6 @@ const app = express();
 const auth = require("./routes/auth");
 const webhooks = require("./routes/webhooks");
 const users = require("./routes/users");
-const notification = require("./routes/notification");
 
 // Calling built-in packages
 const errorHandler = require("./middlewares/error");
@@ -45,7 +44,6 @@ app.use(hpp());
 app.use("/auth", auth);
 app.use("/webhooks", webhooks);
 app.use("/users", users);
-app.use("/notification", notification);
 
 // Mount Built-in middlewares
 app.use(notFound);

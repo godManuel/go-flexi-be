@@ -8,6 +8,8 @@ const {
   createAdmin,
   getUserTransactions,
   getAllUserTransactions,
+  sendNotificationToUsers,
+  sendNotificationToUser,
 } = require("../controllers/users");
 const { protect, authorize } = require("../middlewares/auth");
 
@@ -21,5 +23,9 @@ router.post("/create-admin", createAdmin);
 router.get("/:id/transactions", protect, getUserTransactions);
 
 router.get('/transactions', protect, authorize('admin'), getAllUserTransactions)
+
+router.post("/notify-all", protect, authorize('admin'), sendNotificationToUsers)
+
+router.post("/notify", protect, authorize('admin'), sendNotificationToUser);
 
 module.exports = router;

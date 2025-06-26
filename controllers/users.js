@@ -2,6 +2,7 @@
 const User = require("../models/User");
 const asyncHandler = require("../middlewares/async");
 const ErrorResponse = require("../utils/errorResponse");
+const { sendEmail } = require("../utils/sendEmail");
 
 exports.getUser = asyncHandler(async (req, res, next) => {
   const userId = req.params.id;
@@ -39,16 +40,12 @@ exports.getAllUsers = asyncHandler(async (req, res, next) => {
 exports.updateUserBalance = asyncHandler(async (req, res, next) => {
   const { email, amount } = req.body;
   if (!email || !amount) {
-    return next(
-      new ErrorResponse("Email and amount are required", 400)
-    );
+    return next(new ErrorResponse("Email and amount are required", 400));
   }
 
   const user = await User.findOne({ email });
   if (!user) {
-    return next(
-      new ErrorResponse("User not found", 404)
-    );
+    return next(new ErrorResponse("User not found", 404));
   }
 
   user.accountBalance += +amount;
@@ -64,11 +61,13 @@ exports.updateUserBalance = asyncHandler(async (req, res, next) => {
   });
 });
 
-// Create a new user for admin with just email, full name and password, with role set to admin automaticaly 
+// Create a new user for admin with just email, full name and password, with role set to admin automaticaly
 exports.createAdmin = asyncHandler(async (req, res, next) => {
   const { email, fullName, password } = req.body;
   if (!email || !fullName || !password) {
-    return next(new ErrorResponse("Email, full name and password are required", 400));
+    return next(
+      new ErrorResponse("Email, full name and password are required", 400)
+    );
   }
 
   const existingUser = await User.findOne({ email });
@@ -115,14 +114,14 @@ exports.getUserTransactions = asyncHandler(async (req, res, next) => {
   });
 });
 
-// Get all users transactions for admin 
+// Get all users transactions for admin
 exports.getAllUserTransactions = asyncHandler(async (req, res, next) => {
   const users = await User.find().populate("transactions");
   if (!users || users.length === 0) {
     return next(new ErrorResponse("No users found", 404));
   }
 
-  const allTransactions = users.flatMap(user => ({
+  const allTransactions = users.flatMap((user) => ({
     userId: user.id,
     transactions: user.transactions,
   }));
@@ -131,4 +130,65 @@ exports.getAllUserTransactions = asyncHandler(async (req, res, next) => {
     success: true,
     transactions: allTransactions,
   });
+});
+
+exports.sendNotificationToUser = asyncHandler(async (req, res, next) => {
+  const { email, subject, message } = req.body;
+
+  if (!email || !subject || !message) {
+    return next(
+      new ErrorResponse("Email, subject, and message are required", 400)
+    );
+  }
+
+  const user = await User.findOne({ email, role: 'user' });
+  if (!user) return next(new ErrorResponse("User not found", 404));
+
+  try {
+    await sendEmail(
+      email,
+      subject,
+      "notification", // View name
+      {
+        name: user.fullName,
+        message,
+      }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `Notification sent to ${email}`,
+    });
+  } catch (error) {
+    console.error(error);
+    return next(new ErrorResponse("Failed to send email", 500));
+  }
+});
+
+exports.sendNotificationToUsers = asyncHandler(async (req, res, next) => {
+  const { subject, message } = req.body;
+
+  if (!subject || !message) {
+    return next(new ErrorResponse("Subject and message are required", 400));
+  }
+
+  const users = await User.find({ role: 'user' });
+
+  const promises = users.map((user) =>
+    sendEmail(user.email, subject, "notification", {
+      name: user.fullName,
+      message,
+    })
+  );
+
+  try {
+    await Promise.all(promises);
+    res.status(200).json({
+      success: true,
+      message: "Notifications sent to all users",
+    });
+  } catch (error) {
+    console.error(error);
+    return next(new ErrorResponse("Failed to send emails", 500));
+  }
 });
