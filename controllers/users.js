@@ -51,6 +51,24 @@ exports.updateUserBalance = asyncHandler(async (req, res, next) => {
   user.accountBalance += +amount;
   await user.save();
 
+  // Send credit alert email
+  try {
+    await sendEmail(
+      user.email,
+      "Credit Alert",
+      "credit-alert", // View name
+      {
+        name: user.fullName,
+        amount: amount,
+        date: new Date().toLocaleDateString(),
+        balance: user.accountBalance,
+      }
+    );
+  } catch (error) {
+    console.error("Failed to send credit alert email:", error);
+    // Optionally, you can continue without failing the request
+  }
+
   res.status(200).json({
     success: true,
     message: "User account balance updated successfully",
@@ -141,7 +159,7 @@ exports.sendNotificationToUser = asyncHandler(async (req, res, next) => {
     );
   }
 
-  const user = await User.findOne({ email, role: 'user' });
+  const user = await User.findOne({ email, role: "user" });
   if (!user) return next(new ErrorResponse("User not found", 404));
 
   try {
@@ -172,7 +190,7 @@ exports.sendNotificationToUsers = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse("Subject and message are required", 400));
   }
 
-  const users = await User.find({ role: 'user' });
+  const users = await User.find({ role: "user" });
 
   const promises = users.map((user) =>
     sendEmail(user.email, subject, "notification", {

@@ -5,10 +5,15 @@ exports.sendEmail = async (to, subject, template, context) => {
   const hbs = (await import("nodemailer-express-handlebars")).default;
 
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: "mail.rulsar.com", // Your SMTP server
+    port: 587, // SMTP Port
+    secure: false, // Use STARTTLS instead of SSL
     auth: {
-      user: process.env.AUTH_EMAIL,
-      pass: process.env.AUTH_PASS,
+      user: process.env.AUTH_EMAIL, // Your email
+      pass: process.env.AUTH_PASS, // Your email password
+    },
+    tls: {
+      rejectUnauthorized: false, // Accept self-signed or unverified certificates (if needed)
     },
   });
 
@@ -30,7 +35,7 @@ exports.sendEmail = async (to, subject, template, context) => {
   );
 
   const mailOptions = {
-    from: `${process.env.AUTH_EMAIL}`,
+    from: `Rulsar Mailer, ${process.env.AUTH_EMAIL}`,
     to: to,
     subject: subject,
     template: template,

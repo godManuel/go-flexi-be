@@ -25,7 +25,7 @@ exports.createUser = asyncHandler(async (req, res, next) => {
 
     // Call StroWallet API
     const response = await axios.post(
-      "https://strowallet.com/api/virtual-bank/paga/",
+      "https://strowallet.com/api/virtual-bank/amucha/",
       payload,
       {
         headers: {

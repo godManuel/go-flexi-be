@@ -46,7 +46,7 @@ exports.stroWallet = async (req, res, next) => {
     //   { new: true }
     // );
 
-     const transaction = await Transaction.create({
+    const transaction = await Transaction.create({
       user: user._id,
       type: "deposit",
       amount: newAcctBal,
@@ -54,14 +54,29 @@ exports.stroWallet = async (req, res, next) => {
       status: "successful",
       description: input.tranRemarks,
       date: deposit.tranDateTime,
-      // Add other fields as needed
     });
-
 
     user.accountBalance = newAcctBal;
     user.transactions.push(deposit._id);
     await user.save();
 
+    // Send credit alert email
+    try {
+      await sendEmail(
+        user.email,
+        "Credit Alert",
+        "credit-alert", // View name
+        {
+          name: user.fullName,
+          amount: netAmount,
+          date: new Date(deposit.tranDateTime).toLocaleDateString(),
+          balance: newAcctBal,
+        }
+      );
+    } catch (error) {
+      console.error("Failed to send credit alert email:", error);
+      // Optionally, continue without failing the request
+    }
 
     res.status(201).json({ status: "success", updatedUser });
   } catch (error) {
