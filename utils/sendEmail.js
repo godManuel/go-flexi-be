@@ -35,7 +35,7 @@ exports.sendEmail = async (to, subject, template, context) => {
   );
 
   const mailOptions = {
-    from: `Rulsar Mailer, ${process.env.AUTH_EMAIL}`,
+    from: `"Rulsar", <${process.env.AUTH_EMAIL}>`,
     to: to,
     subject: subject,
     template: template,
