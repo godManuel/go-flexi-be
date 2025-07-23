@@ -48,6 +48,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "NGN",
     },
+    bvnVerified: {
+      type: Boolean,
+      default: false, 
+    },
+    ninVerified: {
+      type: Boolean,  
+      default: false,
+    },
     transactions: [
       {
         type: mongoose.Schema.Types.ObjectId,

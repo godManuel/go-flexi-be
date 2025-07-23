@@ -12,6 +12,11 @@ const app = express();
 const auth = require("./routes/auth");
 const webhooks = require("./routes/webhooks");
 const users = require("./routes/users");
+const kyc = require('./routes/kyc');  
+const data = require("./routes/data")
+const airtime = require("./routes/airtime")
+const cableTv = require("./routes/cableTv")
+const electricity = require("./routes/electricity");
 
 // Calling built-in packages
 const errorHandler = require("./middlewares/error");
@@ -44,6 +49,11 @@ app.use(hpp());
 app.use("/auth", auth);
 app.use("/webhooks", webhooks);
 app.use("/users", users);
+app.use("/kyc", kyc);
+app.use("/data", data);
+app.use("/airtime", airtime)
+app.use('/cable-subscription', cableTv)
+app.use('/electricity', electricity);
 
 // Mount Built-in middlewares
 app.use(notFound);
