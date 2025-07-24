@@ -20,7 +20,7 @@ exports.createUser = asyncHandler(async (req, res, next) => {
       email: email,
       phone: phoneNumber,
       public_key: process.env.STROWALLET_PUBLIC_KEY,
-      webhook_url: `https://go-flexi-be.onrender.com/webhooks/strowallet`,
+      webhook_url: `https://go-flexi-be-zmy7.onrender.com/webhooks/strowallet`,
     };
 
     // Call StroWallet API
