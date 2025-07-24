@@ -41,25 +41,25 @@ exports.stroWallet = async (req, res, next) => {
 
     const newAcctBal = (parseFloat(user.accountBalance) + netAmount).toFixed(2);
 
-    // const updatedUser = await User.findOneAndUpdate(
-    //   { _id: user.id },
-    //   { $set: { accountBalance: newAcctBal } },
-    //   { new: true }
-    // );
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: user.id },
+      { $set: { accountBalance: newAcctBal } },
+      { new: true }
+    );
 
-    const transaction = await Transaction.create({
-      user: user._id,
-      type: "deposit",
-      amount: newAcctBal,
-      reference: deposit._id,
-      status: "successful",
-      description: input.tranRemarks,
-      date: deposit.tranDateTime,
-    });
+    // const transaction = await Transaction.create({
+    //   user: user._id,
+    //   type: "deposit",
+    //   amount: newAcctBal,
+    //   reference: deposit._id,
+    //   status: "successful",
+    //   description: input.tranRemarks,
+    //   date: deposit.tranDateTime,
+    // });
 
-    user.accountBalance = newAcctBal;
-    user.transactions.push(deposit._id);
-    await user.save();
+    // user.accountBalance = newAcctBal;
+    // // user.transactions.push(deposit._id);
+    // await user.save();
 
     // Send credit alert email
     try {
