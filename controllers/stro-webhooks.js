@@ -3,8 +3,10 @@ const User = require("../models/User");
 const Deposit = require("../models/Deposit");
 const ErrorResponse = require("../utils/errorResponse");
 const { calcNetAmount } = require("../utils/calcNetAmount");
+const { sendEmail } = require("../utils/sendEmail");
+const asyncHandler = require("../middlewares/async");
 
-exports.stroWallet = async (req, res, next) => {
+exports.stroWallet = asyncHandler(async (req, res, next) => {
   const {
     accountNumber,
     transactionAmount,
@@ -111,4 +113,4 @@ exports.stroWallet = async (req, res, next) => {
       )
     );
   }
-};
+});
