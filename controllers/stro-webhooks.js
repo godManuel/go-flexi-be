@@ -2,7 +2,8 @@ const { verifySessionId } = require("../services/stroWalletService");
 const User = require("../models/User");
 const Deposit = require("../models/Deposit");
 const ErrorResponse = require("../utils/errorResponse");
-const { calcNetAmount } = require("../utils/calcNetAmount"); // Assuming this is defined in utils
+const { calcNetAmount } = require("../utils/calcNetAmount");
+const Transaction = require("../models/Transaction");
 
 exports.stroWallet = async (req, res, next) => {
   const input = req.body;
