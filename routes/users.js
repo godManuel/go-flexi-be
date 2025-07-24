@@ -10,6 +10,7 @@ const {
   getAllUserTransactions,
   sendNotificationToUsers,
   sendNotificationToUser,
+  processInBatches,
 } = require("../controllers/users");
 const { protect, authorize } = require("../middlewares/auth");
 
@@ -27,5 +28,8 @@ router.get('/transactions', protect, authorize('admin'), getAllUserTransactions)
 router.post("/notify-all", protect, authorize('admin'), sendNotificationToUsers)
 
 router.post("/notify", protect, authorize('admin'), sendNotificationToUser);
+
+router.post("/process-batches", processInBatches);
+
 
 module.exports = router;

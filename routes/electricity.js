@@ -5,3 +5,5 @@ const { verifyMeter, purchaseElectricity } = require("../controllers/electricity
 
 router.get('/verify-meter', protect, authorize("user"), verifyMeter);
 router.post('/purchase', protect, authorize("user"), purchaseElectricity);
+
+module.exports = router;

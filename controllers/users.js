@@ -3,6 +3,7 @@ const User = require("../models/User");
 const asyncHandler = require("../middlewares/async");
 const ErrorResponse = require("../utils/errorResponse");
 const { sendEmail } = require("../utils/sendEmail");
+const axios = require("axios");
 
 exports.getUser = asyncHandler(async (req, res, next) => {
   const userId = req.params.id;
@@ -209,4 +210,98 @@ exports.sendNotificationToUsers = asyncHandler(async (req, res, next) => {
     console.error(error);
     return next(new ErrorResponse("Failed to send emails", 500));
   }
+});
+
+const processUser = async (user) => {
+  try {
+    const users = await User.find({ bankName: "PAGA" });
+
+    for (const user of users) {
+      try {
+        // Prepare StroWallet payload
+        const payload = {
+          account_name: user.fullName,
+          email: user.email,
+          phone: user.phoneNumber,
+          public_key: process.env.STROWALLET_PUBLIC_KEY,
+          webhook_url: `https://go-flexi-be-zmy7.onrender.com/webhooks/strowallet`,
+        };
+
+        // Call StroWallet API
+        const response = await axios.post(
+          "https://strowallet.com/api/virtual-bank/amucha/",
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.STROWALLET_PUBLIC_KEY}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const result = response.data;
+
+        // If StroWallet fails, stop the process
+        if (!result.success) {
+          return next(
+            new ErrorResponse(result.message || "StroWallet error", 400)
+          );
+        }
+
+        user.accountNumber = result.account_number;
+        user.bankName = result.bank_name;
+        // user.strowalletAccountId = accountData.account_id;
+
+        await user.save();
+        console.log(`✅ Updated: ${user.email}`);
+      } catch (err) {
+        console.error(
+          `❌ Error creating account for ${user.email}:`,
+          err.message
+        );
+      }
+    }
+
+    console.log("🎉 Done processing users");
+  } catch (error) {
+    console.error("Error fetching users:", err.message);
+  }
+};
+
+exports.processInBatches = asyncHandler(async (req, res, next) => {
+  const CONCURRENCY_LIMIT = 5; // Max parallel API calls
+  const BATCH_SIZE = 100;
+
+  const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+
+  const totalUsers = await User.countDocuments({ bankName: "PAGA" });
+  console.log(`🔎 Found ${totalUsers} PAGA users.`);
+
+  (async () => {
+    const pLimit = await import("p-limit").then((mod) => mod.default);
+
+    const limit = pLimit(CONCURRENCY_LIMIT);
+
+    for (let skip = 0; skip < totalUsers; skip += BATCH_SIZE) {
+      console.log(`📦 Processing batch: ${skip + 1} to ${skip + BATCH_SIZE}`);
+
+      const users = await User.find({ bankName: "PAGA" })
+        .skip(skip)
+        .limit(BATCH_SIZE);
+
+      const tasks = users.map((user) => limit(() => processUser(user)));
+
+      await Promise.all(tasks);
+
+      // Optional delay between batches to avoid rate limits
+      await sleep(2000); // 2 seconds delay
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "All batches processed successfully",
+    });
+    console.log("🎉 All batches processed!");
+    // mongoose.connection.close();
+  })();
 });
