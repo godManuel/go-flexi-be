@@ -6,6 +6,7 @@ const { calcNetAmount } = require("../utils/calcNetAmount");
 
 exports.stroWallet = async (req, res, next) => {
   const {
+    accountNumber,
     transactionAmount,
     sessionId,
     tranRemarks,
@@ -30,7 +31,7 @@ exports.stroWallet = async (req, res, next) => {
     console.log("Verification:", verificationData);
 
     if (verificationData) {
-      let user = await User.findOne({ accountNumber: input.accountNumber });
+      let user = await User.findOne({ accountNumber: accountNumber });
       if (!user) return next(new ErrorResponse("Not account owner!", 400));
 
       const deposit = await Deposit.create({
