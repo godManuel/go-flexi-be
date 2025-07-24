@@ -3,17 +3,16 @@ const User = require("../models/User");
 const Deposit = require("../models/Deposit");
 const ErrorResponse = require("../utils/errorResponse");
 const { calcNetAmount } = require("../utils/calcNetAmount");
-const Transaction = require("../models/Transaction");
 
 exports.stroWallet = async (req, res, next) => {
-  const input = req.body;
+  const { transactionAmount, sessionId } = req.body;
 
   try {
-    // const verificationData = await verifySessionId(
-    //   input.transactionAmount,
-    //   input.sessionId
-    // );
-    // console.log("Verification:", verificationData);
+    const verificationData = await verifySessionId(
+      transactionAmount,
+      sessionId
+    );
+    console.log("Verification:", verificationData);
 
     let user = await User.findOne({ accountNumber: input.accountNumber });
     if (!user) return next(new ErrorResponse("Not account owner!", 400));
@@ -79,6 +78,7 @@ exports.stroWallet = async (req, res, next) => {
       // Optionally, continue without failing the request
     }
 
+    console.log(updatedUser)
     res.status(201).json({ status: "success", updatedUser });
   } catch (error) {
     const apiError = error.response?.data || error.message;
