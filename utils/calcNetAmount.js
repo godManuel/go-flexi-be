@@ -6,9 +6,15 @@ exports.calcNetAmount = (amount) => {
 
   const percentageFee = amount * PERCENTAGE_FEE;
   const totalFee = percentageFee + FIXED_FEE;
-  const netAmount = amount - totalFee;
+  let netAmount = amount - totalFee;
+
+  netAmount = Math.max(0, netAmount);
+  if (netAmount > 2500) {
+    netAmount = 2500;
+  }
+
   return {
-    netAmount: Math.max(0, netAmount), // Ensure no negative credits
-    totalFee: totalFee,
+    netAmount,
+    totalFee
   };
 };
