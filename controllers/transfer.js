@@ -6,86 +6,93 @@ const Transfer = require("../models/Transfer.js");
 const User = require("../models/User.js");
 
 exports.bankTransfer = asyncHandler(async (req, res, next) => {
+  const {
+    amount,
+    account_number,
+    narration,
+    name_enquiry_reference,
+    SenderName,
+    bank_name,
+  } = req.query;
+
+  // Validate required fields
+  if (
+    !amount ||
+    !account_number ||
+    !narration ||
+    !name_enquiry_reference ||
+    !bank_name
+  ) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  // Find bank code
+  const matchedBank = bankCodes.find(
+    (bank) =>
+      bank.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim()
+  );
+  if (!matchedBank) {
+    return res.status(400).json({ error: `Unsupported bank name: ${bank_name}` });
+  }
+  const bank_code = matchedBank.bankCode;
+
+  // Prepare payload
+  const payload = {
+    public_key: process.env.STROWALLET_PUBLIC_KEY,
+    amount,
+    bank_code,
+    account_number,
+    narration,
+    name_enquiry_reference,
+  };
+  if (SenderName) payload.SenderName = SenderName;
+
+  // Validate user and balance
+  let user;
   try {
-    const {
-      amount,
-      account_number,
-      narration,
-      name_enquiry_reference,
-      SenderName, // optional
-      bank_name, // user-provided
-    } = req.query;
-
-    if (
-      !amount ||
-      !account_number ||
-      !narration ||
-      !name_enquiry_reference ||
-      !bank_name
-    ) {
-      return next(new ErrorResponse("Missing required fields", 400));
+    user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
     }
-
-    // Match the bank_code using bank_name
-    const matchedBank = bankCodes.find(
-      (bank) =>
-        bank.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim()
-    );
-
-    if (!matchedBank) {
-      return next(
-        new ErrorResponse(`Unsupported bank name: ${bank_name}`, 400)
-      );
-    }
-
-    const bank_code = matchedBank.bankCode;
-
-    const payload = {
-      public_key: process.env.STROWALLET_PUBLIC_KEY,
-      amount,
-      bank_code,
-      account_number,
-      narration,
-      name_enquiry_reference,
-    };
-
-    if (SenderName) {
-      payload.SenderName = SenderName;
-    }
-
     const transferAmount = Number(amount);
     const transferFee = Number(process.env.TRANSFER_FEE);
     const totalRequired = transferAmount + transferFee;
 
-    console.log(totalRequired);
+    if (user.accountBalance < totalRequired) {
+      return res.status(400).json({ error: "Insufficient funds" });
+    }
 
-    // Get user from DB
-    const user = await User.findById(req.user.id);
-    if (!user) return next(new ErrorResponse("User not found", 404));
+    if(user.isKYC !== "verified") {
+      return res.status(403).json({ error: "KYC verification required" });
+    }
+  } catch (err) {
+    return res.status(500).json({ error: "User lookup failed", details: err.message });
+  }
 
-    console.log(user);
-    if (user.accountBalance < totalRequired)
-      return next(new ErrorResponse("Insufficient funds", 400));
-
-    // Send request to StroWallet
-    const response = await axios.post(
+  // Send request to StroWallet
+  let resp;
+  try {
+    resp = await axios.post(
       "https://strowallet.com/api/banks/request/",
       payload,
-      {
-        headers: { accept: "application/json" },
-      }
+      { headers: { accept: "application/json" } }
     );
+  } catch (err) {
+    const apiError = err.resp?.data || err.message;
+    return res.status(502).json({ error: "StroWallet request failed", details: apiError });
+  }
 
-    // Save full request + response to DB
-    await Transfer.create({
+  // Save to DB
+  try {
+    const transfer = await Transfer.create({
       ...payload,
-      bank_name, // keep the original name user sent
-      response: response.data,
+      bank_name,
+      user: req.user.id
     });
 
-    res.status(200).json(response.data);
-  } catch (error) {
-    console.error("Error:", error.response?.data || error.message);
-    res.status(500).json({ error: "Request failed", details: error.message });
+    // Success resp
+  return res.status(200).json({ success: true, data: transfer });
+  } catch (err) {
+    return res.status(500).json({ error: "Failed to save transfer", details: err.message });
   }
-});
+})

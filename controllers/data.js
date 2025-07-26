@@ -49,10 +49,12 @@ exports.buyData = asyncHandler(async (req, res, next) => {
 
     if(result) {
       user.accountBalance -= amount;
-      await user.save();
-    }
+      const updatedUser = await user.save();
 
-    res.status(200).json({ success: true, data: result });
+      res.status(200).json({ success: true, data: updatedUser });
+    } else {
+      return next(new ErrorResponse("Data purchase failed", 500));
+    }
   } catch (error) {
     if (error.response && error.response.data) {
       console.error(error.response?.data || error.message);

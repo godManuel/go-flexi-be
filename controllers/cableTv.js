@@ -84,10 +84,12 @@ exports.requestCableTvSubscription = asyncHandler(async (req, res, next) => {
 
     if (response) {
       user.accountBalance -= amount;
-      await user.save();
-    }
+      const updatedUser = await user.save();
 
-    res.status(200).json({ success: true, data: response });
+      res.status(200).json({ success: true, data: updatedUser });
+    } else {
+      return next(new ErrorResponse("Cable TV subscription failed", 500));
+    }
   } catch (error) {
     console.error(error);
     return next(new ErrorResponse("Cable TV subscription failed", 500));

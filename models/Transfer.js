@@ -10,7 +10,10 @@ const transferSchema = new mongoose.Schema({
   narration: String,
   name_enquiry_reference: String,
   SenderName: { type: String, default: null },
-  response: mongoose.Schema.Types.Mixed, // to store API response
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
   createdAt: { type: Date, default: Date.now },
 });
 

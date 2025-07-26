@@ -51,8 +51,11 @@ exports.confirmBvn = asyncHandler(async (req, res, next) => {
     }
 
     if (result) {
-      user.bvnVerified = true;
-      await user.save();
+      await user.findByIdAndUpdate(
+        req.user.id,
+        { bvnVerified: true, isKYC: "verified" },
+        { new: true }
+      );
     }
 
     res.status(200).json({ success: true, data: result });
@@ -81,6 +84,11 @@ exports.verifyNin = asyncHandler(async (req, res, next) => {
       telephoneno,
     } = req.query;
 
+    const user = await User.findById({ _id: req.user.id });
+        if (!user) {
+          return next(new ErrorResponse("User not found", 404));
+        }
+
     const result = await verifyNIN({
       number_nin,
       surname,
@@ -90,10 +98,10 @@ exports.verifyNin = asyncHandler(async (req, res, next) => {
     });
 
     // Optionally update user NIN status here
-    if (result && result.success) {
-      await User.findByIdAndUpdate(
+    if (result) {
+      await user.findByIdAndUpdate(
         req.user.id,
-        { ninVerified: true },
+        { ninVerified: true, isKYC: "verified" },
         { new: true }
       );
     }
