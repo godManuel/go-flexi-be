@@ -1,5 +1,5 @@
 const User = require("../models/User");
-const { getDataPlans } = require("../services/stroWalletService");
+const { getDataPlans, purchaseData } = require("../services/stroWalletService");
 const asyncHandler = require("../middlewares/async");
 const ErrorResponse = require("../utils/errorResponse");
 
@@ -40,7 +40,7 @@ exports.buyData = asyncHandler(async (req, res, next) => {
     }
 
     // Assuming you have a function to buy data from StroWallet
-    const result = await buyData({
+    const result = await purchaseData({
       amount,
       phone,
       service_name,
