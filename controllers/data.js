@@ -1,3 +1,4 @@
+const User = require("../models/User");
 const { getDataPlans } = require("../services/stroWalletService");
 const asyncHandler = require("../middlewares/async");
 const ErrorResponse = require("../utils/errorResponse");
