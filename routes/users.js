@@ -4,7 +4,8 @@ const express = require("express");
 const {
   getUser,
   getAllUsers,
-  updateUserBalance,
+  creditUserBalance,
+  debitUserBalance,
   createAdmin,
   getUserTransactions,
   getAllUserTransactions,
@@ -18,7 +19,8 @@ const router = express.Router();
 
 router.get("/:id", protect, getUser);
 router.get("/", protect, authorize("admin"), getAllUsers);
-router.put("/update-balance", protect, authorize("admin"), updateUserBalance);
+router.put("/credit-balance", protect, authorize("admin"), creditUserBalance);
+router.put("/debit-balance", protect, authorize("admin"), debitUserBalance);
 router.post("/create-admin", createAdmin);
 
 router.get("/:id/transactions", protect, getUserTransactions);

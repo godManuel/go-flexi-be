@@ -11,6 +11,11 @@ exports.buyAirtime = asyncHandler(async (req, res, next) => {
     if (!user) {
       return next(new ErrorResponse("User not found", 404));
     }
+
+    if (user.accountBalance < 5000) {
+      return next(new ErrorResponse("Insufficient Funds", 400));
+    }
+
     if (user.accountBalance < amount) {
       return next(new ErrorResponse("Insufficient Funds", 400));
     }
