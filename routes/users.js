@@ -31,7 +31,7 @@ router.post("/notify-all", protect, authorize('admin'), sendNotificationToUsers)
 
 router.post("/notify", protect, authorize('admin'), sendNotificationToUser);
 
-router.post("/process-batches", processInBatches);
+// router.post("/process-batches", processInBatches);
 
 
 module.exports = router;
