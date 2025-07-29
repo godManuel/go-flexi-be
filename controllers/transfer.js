@@ -32,7 +32,9 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
       bank.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim()
   );
   if (!matchedBank) {
-    return res.status(400).json({ error: `Unsupported bank name: ${bank_name}` });
+    return res
+      .status(400)
+      .json({ error: `Unsupported bank name: ${bank_name}` });
   }
   const bank_code = matchedBank.bankCode;
 
@@ -58,15 +60,21 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
     const transferFee = Number(process.env.TRANSFER_FEE);
     const totalRequired = transferAmount + transferFee;
 
+    if (user.accountBalance < 5000) {
+      return next(new ErrorResponse("Insufficient Funds", 400));
+    }
+
     if (user.accountBalance < totalRequired) {
       return res.status(400).json({ error: "Insufficient funds" });
     }
 
-    if(user.isKYC !== "verified") {
+    if (user.isKYC !== "verified") {
       return res.status(403).json({ error: "KYC verification required" });
     }
   } catch (err) {
-    return res.status(500).json({ error: "User lookup failed", details: err.message });
+    return res
+      .status(500)
+      .json({ error: "User lookup failed", details: err.message });
   }
 
   // Send request to StroWallet
@@ -79,7 +87,9 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
     );
   } catch (err) {
     const apiError = err.resp?.data || err.message;
-    return res.status(502).json({ error: "StroWallet request failed", details: apiError });
+    return res
+      .status(502)
+      .json({ error: "StroWallet request failed", details: apiError });
   }
 
   // Save to DB
@@ -87,12 +97,16 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
     const transfer = await Transfer.create({
       ...payload,
       bank_name,
-      user: req.user.id
+      user: req.user.id,
     });
 
     // Success resp
-  return res.status(200).json({ success: true, data: transfer });
+    return res
+      .status(200)
+      .json({ message: "Transfer completed", success: true, data: transfer });
   } catch (err) {
-    return res.status(500).json({ error: "Failed to save transfer", details: err.message });
+    return res
+      .status(500)
+      .json({ error: "Failed to save transfer", details: err.message });
   }
-})
+});

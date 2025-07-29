@@ -17,6 +17,7 @@ const data = require("./routes/data")
 const airtime = require("./routes/airtime")
 const cableTv = require("./routes/cableTv")
 const electricity = require("./routes/electricity");
+const virtualCard = require("./routes/virtual-card");
 
 // Calling built-in packages
 const errorHandler = require("./middlewares/error");
@@ -54,6 +55,7 @@ app.use("/data", data);
 app.use("/airtime", airtime)
 app.use('/cable-subscription', cableTv)
 app.use('/electricity', electricity);
+app.use('/virtual-card', virtualCard)
 
 // Mount Built-in middlewares
 app.use(notFound);

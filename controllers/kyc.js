@@ -1,18 +1,16 @@
-const { verifyBVN, confirmBVN, verifyNIN } = require("../services/stroWalletService");
+const {
+  verifyBVN,
+  confirmBVN,
+  verifyNIN,
+} = require("../services/stroWalletService");
 const asyncHandler = require("../middlewares/async");
 const User = require("../models/User");
 const ErrorResponse = require("../utils/errorResponse");
 
 exports.verifyBvn = asyncHandler(async (req, res, next) => {
   try {
-    const {
-      number,
-      firstName,
-      lastName,
-      dateOfBirth,
-      phoneNumber,
-      mode,
-    } = req.query;
+    const { number, firstName, lastName, dateOfBirth, phoneNumber, mode } =
+      req.query;
 
     const result = await verifyBVN({
       number,
@@ -37,7 +35,7 @@ exports.verifyBvn = asyncHandler(async (req, res, next) => {
     }
     return next(new ErrorResponse(error.message || "Server Error", 500));
   }
-})
+});
 
 exports.confirmBvn = asyncHandler(async (req, res, next) => {
   try {
@@ -45,15 +43,23 @@ exports.confirmBvn = asyncHandler(async (req, res, next) => {
 
     const result = await confirmBVN({ trx, otp, mode });
 
-    const user = await User.findById({_id: req.user.id});
+    const user = await User.findById({ _id: req.user.id });
     if (!user) {
       return next(new ErrorResponse("User not found", 404));
     }
 
+    if (user.accountBalance < 5000) {
+      return next(new ErrorResponse("Insufficient Funds", 400));
+    }
+
     if (result) {
-      await user.findByIdAndUpdate(
+      await User.findByIdAndUpdate(
         req.user.id,
-        { bvnVerified: true, isKYC: "verified" },
+        {
+          bvnVerified: true,
+          isKYC: "verified",
+          $inc: { accountBalance: -1000 }
+        },
         { new: true }
       );
     }
@@ -71,23 +77,21 @@ exports.confirmBvn = asyncHandler(async (req, res, next) => {
     }
     return next(new ErrorResponse(error.message || "Server Error", 500));
   }
-}
-);
+});
 
 exports.verifyNin = asyncHandler(async (req, res, next) => {
   try {
-    const {
-      number_nin,
-      surname,
-      firstname,
-      birthdate,
-      telephoneno,
-    } = req.query;
+    const { number_nin, surname, firstname, birthdate, telephoneno } =
+      req.query;
 
     const user = await User.findById({ _id: req.user.id });
-        if (!user) {
-          return next(new ErrorResponse("User not found", 404));
-        }
+    if (!user) {
+      return next(new ErrorResponse("User not found", 404));
+    }
+
+    if (user.accountBalance < 5000) {
+      return next(new ErrorResponse("Insufficient Funds", 400));
+    }
 
     const result = await verifyNIN({
       number_nin,
@@ -99,9 +103,13 @@ exports.verifyNin = asyncHandler(async (req, res, next) => {
 
     // Optionally update user NIN status here
     if (result) {
-      await user.findByIdAndUpdate(
+      await User.findByIdAndUpdate(
         req.user.id,
-        { ninVerified: true, isKYC: "verified" },
+        {
+          bvnVerified: true,
+          isKYC: "verified",
+          $inc: { accountBalance: -1000 }
+        },
         { new: true }
       );
     }

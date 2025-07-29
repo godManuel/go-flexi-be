@@ -304,3 +304,75 @@ exports.subscribeElectricity = async ({ amount, phone, service_name, meter_type,
 
   return response.data;
 }
+
+
+// Create Virtual USD Card
+exports.createVirtualUSDCard = async ({
+  name_on_card, card_type, amount, customerEmail, mode, 
+}) => {
+  const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
+  const url = "https://strowallet.com/api/bitvcard/create-card/";
+
+  const response = await axios.post(
+    url,
+    {
+      public_key: STRO_PUB_KEY,
+      name_on_card,
+      card_type,
+      amount,
+      customerEmail,
+      mode
+    },
+    {
+      headers: {
+        accept: "application/json",
+      },
+    }
+  );
+
+  return response.data;
+};
+
+exports.exchangeRate = async() => {
+  const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
+  const url = "https://strowallet.com/api/exchange-rate/USD/NGN/";
+
+  const response = await axios.get(url, {
+    headers: {
+      accept: "application/json",
+    },
+    params: {
+      public_key: STRO_PUB_KEY,
+    },
+  });
+
+  return response.data;
+}
+
+// Fund Virtual USD Card
+exports.fundVirtualUSDCard = async ({
+  card_id,
+  amount,
+  mode,
+}) => {
+  const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
+  const url = "https://strowallet.com/api/bitvcard/fund-card/";
+
+  const response = await axios.post(
+    url,
+    {
+      public_key: STRO_PUB_KEY,
+      card_id,
+      amount,
+      mode,
+    },
+    {
+      headers: {
+        accept: "application/json",
+      },
+    }
+  );
+
+  return response.data;
+};
+//
