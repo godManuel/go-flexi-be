@@ -51,7 +51,7 @@ const userSchema = new mongoose.Schema(
     isKYC: {
       type: String,
       enum: ["pending", "verified", "unverified"],
-      default: "pending",
+      default: "unverified",
     },
     bvnVerified: {
       type: Boolean,
