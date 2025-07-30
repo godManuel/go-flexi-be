@@ -201,7 +201,7 @@ exports.getCableTVPlans = async ({ service_id }) => {
 };
 
 // Verify SmartCard Number
-exports.verifySmartCardNo = async({ service_id, customer_id }) => {
+exports.verifySmartCardNo = async ({ service_id, customer_id }) => {
   const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
   const url = "https://strowallet.com/api/cable-subscription/verify-merchant/";
 
@@ -215,14 +215,13 @@ exports.verifySmartCardNo = async({ service_id, customer_id }) => {
       params: {
         public_key: STRO_PUB_KEY,
         service_id,
-        customer_id
+        customer_id,
       },
     }
   );
 
   return response.data;
-}
-
+};
 
 // Subscribe CableTV Plans
 exports.subscribeCableTv = async ({
@@ -245,7 +244,7 @@ exports.subscribeCableTv = async ({
       service_name,
       service_id,
       variation_code,
-      customer_id
+      customer_id,
     },
     {
       headers: {
@@ -262,7 +261,7 @@ exports.verifyMeterNo = async ({ service_name, meter_type, meter_number }) => {
   const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
   const url = "https://strowallet.com/api/electricity/verify-merchant/";
 
- const response = await axios.post(
+  const response = await axios.post(
     url,
     {
       public_key: STRO_PUB_KEY,
@@ -278,10 +277,16 @@ exports.verifyMeterNo = async ({ service_name, meter_type, meter_number }) => {
   );
 
   return response.data;
-}
+};
 
-// Purchase Electricity 
-exports.subscribeElectricity = async ({ amount, phone, service_name, meter_type, meter_number }) => {
+// Purchase Electricity
+exports.subscribeElectricity = async ({
+  amount,
+  phone,
+  service_name,
+  meter_type,
+  meter_number,
+}) => {
   const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
   const url = "https://strowallet.com/api/electricity/request/";
 
@@ -303,12 +308,15 @@ exports.subscribeElectricity = async ({ amount, phone, service_name, meter_type,
   );
 
   return response.data;
-}
-
+};
 
 // Create Virtual USD Card
 exports.createVirtualUSDCard = async ({
-  name_on_card, card_type, amount, customerEmail, mode, 
+  name_on_card,
+  card_type,
+  amount,
+  customerEmail,
+  mode,
 }) => {
   const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
   const url = "https://strowallet.com/api/bitvcard/create-card/";
@@ -321,7 +329,7 @@ exports.createVirtualUSDCard = async ({
       card_type,
       amount,
       customerEmail,
-      mode
+      mode,
     },
     {
       headers: {
@@ -333,7 +341,7 @@ exports.createVirtualUSDCard = async ({
   return response.data;
 };
 
-exports.exchangeRate = async() => {
+exports.exchangeRate = async () => {
   const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
   const url = "https://strowallet.com/api/exchange-rate/USD/NGN/";
 
@@ -347,14 +355,10 @@ exports.exchangeRate = async() => {
   });
 
   return response.data;
-}
+};
 
 // Fund Virtual USD Card
-exports.fundVirtualUSDCard = async ({
-  card_id,
-  amount,
-  mode,
-}) => {
+exports.fundVirtualUSDCard = async ({ card_id, amount, mode }) => {
   const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
   const url = "https://strowallet.com/api/bitvcard/fund-card/";
 
@@ -375,4 +379,70 @@ exports.fundVirtualUSDCard = async ({
 
   return response.data;
 };
-//
+
+// Withdraw Funds from Virtual USD Card
+exports.withdrawFromVirtualUSDCard = async ({ card_id, amount, mode }) => {
+  const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
+  const url = "https://strowallet.com/api/bitvcard/card_withdraw/";
+
+  const response = await axios.post(
+    url,
+    {},
+    {
+      headers: {
+        accept: "application/json",
+      },
+      params: {
+        public_key: STRO_PUB_KEY,
+        card_id,
+        amount,
+        mode,
+      },
+    }
+  );
+
+  return response.data;
+};
+
+// Get Card Transactions
+exports.getCardTransactions = async ({ card_id, mode }) => {
+  const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
+  const url = "https://strowallet.com/api/bitvcard/card-transactions/";
+
+  const response = await axios.post(
+    url,
+    {
+      public_key: STRO_PUB_KEY,
+      card_id,
+      mode,
+    },
+    {
+      headers: {
+        accept: "application/json",
+      },
+    }
+  );
+
+  return response.data;
+};
+
+exports.getCardDetails = async ({ card_id, mode }) => {
+  const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
+  const url = "https://strowallet.com/api/bitvcard/fetch-card-detail/";
+
+  const response = await axios.post(
+    url,
+    {
+      public_key: STRO_PUB_KEY,
+      card_id,
+      mode,
+    },
+    {
+      headers: {
+        accept: "application/json",
+      },
+    }
+  );
+
+  return response.data;
+};

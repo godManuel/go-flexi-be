@@ -16,7 +16,16 @@ exports.createVUSDCard = asyncHandler(async (req, res, next) => {
     }
 
     let exchangeRateValue = Math.floor(exchangeResp.rate); // Convert to integer
-    console.log("Exchange Rate (int):", exchangeRateValue);
+    const serviceFeePerDollar = 100;
+    const totalRate = exchangeRateValue + serviceFeePerDollar;
+    console.log(
+      "Exchange Rate (int):",
+      exchangeRateValue,
+      "Service Fee per $:",
+      serviceFeePerDollar,
+      "Total Rate:",
+      totalRate
+    );
 
     const { card_type, amount, mode } = req.body;
 
@@ -25,8 +34,12 @@ exports.createVUSDCard = asyncHandler(async (req, res, next) => {
       return next(new ErrorResponse("User not found", 404));
     }
 
-    const amountInNaira = amount * exchangeRateValue;
-    console.log("Amount in Naira:", amountInNaira);
+    const amountInNaira = amount * totalRate;
+    console.log("Amount in Naira (with service fee):", amountInNaira);
+
+    if (user.isKYC !== "verified") {
+      return res.status(403).json({ error: "KYC verification required" });
+    }
 
     if (user.accountBalance < amountInNaira) {
       return next(new ErrorResponse("Insufficient funds", 400));
@@ -92,7 +105,16 @@ exports.fundVUSDCard = asyncHandler(async (req, res, next) => {
     }
 
     let exchangeRateValue = Math.floor(exchangeResp.rate); // Convert to integer
-    console.log("Exchange Rate (int):", exchangeRateValue);
+    const serviceFeePerDollar = 100;
+    const totalRate = exchangeRateValue + serviceFeePerDollar;
+    console.log(
+      "Exchange Rate (int):",
+      exchangeRateValue,
+      "Service Fee per $:",
+      serviceFeePerDollar,
+      "Total Rate:",
+      totalRate
+    );
 
     const { amount, card_id } = req.body;
 
@@ -101,8 +123,12 @@ exports.fundVUSDCard = asyncHandler(async (req, res, next) => {
       return next(new ErrorResponse("User not found", 404));
     }
 
-    const amountInNaira = amount * exchangeRateValue;
-    console.log("Amount in Naira:", amountInNaira);
+    const amountInNaira = amount * totalRate;
+    console.log("Amount in Naira (with service fee):", amountInNaira);
+
+    if (user.isKYC !== "verified") {
+      return res.status(403).json({ error: "KYC verification required" });
+    }
 
     if (user.accountBalance < amountInNaira) {
       return next(new ErrorResponse("Insufficient funds", 400));
@@ -146,3 +172,119 @@ exports.fundVUSDCard = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse(error.message || "Server Error", 500));
   }
 });
+
+// Function to withdraw from the virtual USD card
+exports.withdrawFromVUSDCard = asyncHandler(async (req, res, next) => {
+  try {
+    const { card_id, amount, mode } = req.body;
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return next(new ErrorResponse("User not found", 404));
+    }
+
+    if (user.isKYC !== "verified") {
+      return res.status(403).json({ error: "KYC verification required" });
+    }
+
+    // Assuming you have a service to withdraw from the virtual card
+    const result = await withdrawFromVirtualUSDCard({
+      card_id,
+      amount,
+      mode,
+    });
+
+    if (result) {
+      return res.status(200).json({ success: true, data: result });
+    } else {
+      return next(
+        new ErrorResponse("Failed to withdraw from virtual card", 500)
+      );
+    }
+  } catch (error) {
+    if (error.response && error.response.data) {
+      console.error(error.response?.data || error.message);
+      return next(
+        new ErrorResponse(
+          error.response.data.message || "Strowallet withdrawal failed",
+          error.response.status || 500
+        )
+      );
+    }
+    return next(new ErrorResponse(error.message || "Server Error", 500));
+  }
+});
+
+// Function to get card transactions
+exports.cardTransactions = asyncHandler(async (req, res, next) => {
+  try {
+    const { card_id, mode } = req.body;
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return next(new ErrorResponse("User not found", 404));
+    }
+
+    if (user.isKYC !== "verified") {
+      return res.status(403).json({ error: "KYC verification required" });
+    }
+
+    const result = await getCardTransactions({ card_id, mode });
+
+    if (result) {
+      return res.status(200).json({ success: true, data: result });
+    } else {
+      return next(
+        new ErrorResponse("Failed to retrieve card transactions", 500)
+      );
+    }
+  } catch (error) {
+    if (error.response && error.response.data) {
+      console.error(error.response?.data || error.message);
+      return next(
+        new ErrorResponse(
+          error.response.data.message ||
+            "Strowallet transaction retrieval failed",
+          error.response.status || 500
+        )
+      );
+    }
+    return next(new ErrorResponse(error.message || "Server Error", 500));
+  }
+});
+
+
+exports.cardDetails = asyncHandler(async (req, res, next) => {
+  try {
+    const { card_id, mode } = req.body;
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return next(new ErrorResponse("User not found", 404));
+    }
+
+    if (user.isKYC !== "verified") {
+      return res.status(403).json({ error: "KYC verification required" });
+    }
+
+    // Assuming you have a service to get card details
+    const result = await getCardDetails({ card_id, mode });
+
+    if (result) {
+      return res.status(200).json({ success: true, data: result });
+    } else {
+      return next(new ErrorResponse("Failed to retrieve card details", 500));
+    }
+  } catch (error) {
+    if (error.response && error.response.data) {
+      console.error(error.response?.data || error.message);
+      return next(
+        new ErrorResponse(
+          error.response.data.message || "Strowallet card details retrieval failed",
+          error.response.status || 500
+        )
+      );
+    }
+    return next(new ErrorResponse(error.message || "Server Error", 500));
+  }
+})

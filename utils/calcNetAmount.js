@@ -1,14 +1,14 @@
-require("dotenv").config();
-
 exports.calcNetAmount = (amount) => {
   const PERCENTAGE_FEE = parseFloat(process.env.PERCENTAGE_FEE);
   const FIXED_FEE = Number(process.env.FIXED_FEE);
 
   const percentageFee = amount * PERCENTAGE_FEE;
-  const totalFee = percentageFee + FIXED_FEE;
-  let netAmount = amount - totalFee;
+  let totalFee = percentageFee + FIXED_FEE;
 
-  netAmount = Math.min(2500, Math.max(0, netAmount));
+  totalFee = Math.min(2500, totalFee); // Cap totalFee at 2500
+
+  let netAmount = amount - totalFee;
+  netAmount = Math.max(0, netAmount); // Ensure netAmount is not negative
 
   return {
     netAmount,

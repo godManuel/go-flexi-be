@@ -11,7 +11,7 @@ const {
   getAllUserTransactions,
   sendNotificationToUsers,
   sendNotificationToUser,
-  processInBatches,
+  getNetAmount
 } = require("../controllers/users");
 const { protect, authorize } = require("../middlewares/auth");
 
@@ -31,6 +31,7 @@ router.post("/notify-all", protect, authorize('admin'), sendNotificationToUsers)
 
 router.post("/notify", protect, authorize('admin'), sendNotificationToUser);
 
+// router.post("/get-net-amount", getNetAmount);
 // router.post("/process-batches", processInBatches);
 
 

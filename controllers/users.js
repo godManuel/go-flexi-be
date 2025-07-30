@@ -3,6 +3,7 @@ const User = require("../models/User");
 const asyncHandler = require("../middlewares/async");
 const ErrorResponse = require("../utils/errorResponse");
 const { sendEmail } = require("../utils/sendEmail");
+const { calcNetAmount } = require("../utils/calcNetAmount");
 // const axios = require("axios");
 
 exports.getUser = asyncHandler(async (req, res, next) => {
@@ -350,4 +351,18 @@ exports.sendNotificationToUsers = asyncHandler(async (req, res, next) => {
 //     console.log("🎉 All batches processed!");
 //     // mongoose.connection.close();
 //   })();
+// });
+// exports.getNetAmount = asyncHandler(async (req, res, next) => {
+//   const { amount } = req.body;
+
+//   if (typeof amount !== "number") {
+//     return next(new ErrorResponse("Amount and fee must be numbers", 400));
+//   }
+
+//   const netAmount = calcNetAmount(amount);
+
+//   res.status(200).json({
+//     success: true,
+//     netAmount,
+//   });
 // });
