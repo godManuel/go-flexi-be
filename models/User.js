@@ -77,6 +77,7 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+    vusd_card: String,
     emailOTP: String,
     emailOTPExpire: Date,
   },

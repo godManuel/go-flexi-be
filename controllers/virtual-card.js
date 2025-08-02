@@ -63,8 +63,11 @@ exports.createVUSDCard = asyncHandler(async (req, res, next) => {
       mode,
     });
 
+    console.log(result);
+
     if (result) {
       user.accountBalance -= amountInNaira; // Deduct based on exchange rate
+      user.vusd_card = result.response.card_id;
       await user.save();
 
       return res.status(200).json({ success: true, data: result });
@@ -121,6 +124,12 @@ exports.fundVUSDCard = asyncHandler(async (req, res, next) => {
     const user = await User.findById(req.user.id);
     if (!user) {
       return next(new ErrorResponse("User not found", 404));
+    }
+
+    if (user.vusd_card !== card_id) {
+      return next(
+        new ErrorResponse("Card ID does not match user's virtual card", 400)
+      );
     }
 
     const amountInNaira = amount * totalRate;
@@ -183,6 +192,12 @@ exports.withdrawFromVUSDCard = asyncHandler(async (req, res, next) => {
       return next(new ErrorResponse("User not found", 404));
     }
 
+    if (user.vusd_card !== card_id) {
+      return next(
+        new ErrorResponse("Card ID does not match user's virtual card", 400)
+      );
+    }
+
     if (user.isKYC !== "verified") {
       return res.status(403).json({ error: "KYC verification required" });
     }
@@ -225,6 +240,12 @@ exports.cardTransactions = asyncHandler(async (req, res, next) => {
       return next(new ErrorResponse("User not found", 404));
     }
 
+    if (user.vusd_card !== card_id) {
+      return next(
+        new ErrorResponse("Card ID does not match user's virtual card", 400)
+      );
+    }
+
     if (user.isKYC !== "verified") {
       return res.status(403).json({ error: "KYC verification required" });
     }
@@ -253,7 +274,6 @@ exports.cardTransactions = asyncHandler(async (req, res, next) => {
   }
 });
 
-
 exports.cardDetails = asyncHandler(async (req, res, next) => {
   try {
     const { card_id, mode } = req.body;
@@ -261,6 +281,12 @@ exports.cardDetails = asyncHandler(async (req, res, next) => {
     const user = await User.findById(req.user.id);
     if (!user) {
       return next(new ErrorResponse("User not found", 404));
+    }
+
+    if (user.vusd_card !== card_id) {
+      return next(
+        new ErrorResponse("Card ID does not match user's virtual card", 400)
+      );
     }
 
     if (user.isKYC !== "verified") {
@@ -280,11 +306,12 @@ exports.cardDetails = asyncHandler(async (req, res, next) => {
       console.error(error.response?.data || error.message);
       return next(
         new ErrorResponse(
-          error.response.data.message || "Strowallet card details retrieval failed",
+          error.response.data.message ||
+            "Strowallet card details retrieval failed",
           error.response.status || 500
         )
       );
     }
     return next(new ErrorResponse(error.message || "Server Error", 500));
   }
-})
+});
