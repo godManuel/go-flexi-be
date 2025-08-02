@@ -11,6 +11,7 @@ const app = express();
 // Calling routes
 const auth = require("./routes/auth");
 const webhooks = require("./routes/webhooks");
+const transfer = require("./routes/transfer");
 const users = require("./routes/users");
 const kyc = require('./routes/kyc');  
 const data = require("./routes/data")
@@ -49,6 +50,7 @@ app.use(hpp());
 // Mount routes
 app.use("/auth", auth);
 app.use("/webhooks", webhooks);
+app.use("/transfer", transfer);
 app.use("/users", users);
 app.use("/kyc", kyc);
 app.use("/data", data);
