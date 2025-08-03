@@ -3,6 +3,9 @@ const {
   createVirtualUSDCard,
   exchangeRate,
   fundVirtualUSDCard,
+  withdrawFromVirtualUSDCard,
+  getCardTransactions,
+  getCardDetails 
 } = require("../services/stroWalletService");
 const asyncHandler = require("../middlewares/async");
 const ErrorResponse = require("../utils/errorResponse");
@@ -68,9 +71,9 @@ exports.createVUSDCard = asyncHandler(async (req, res, next) => {
     if (result) {
       user.accountBalance -= amountInNaira; // Deduct based on exchange rate
       user.vusd_card = result.response.card_id;
-      await user.save();
+      const savedUser = await user.save();
 
-      return res.status(200).json({ success: true, data: result });
+      return res.status(200).json({ success: true, data: savedUser });
     } else {
       return next(new ErrorResponse("Virtual card creation failed", 500));
     }
@@ -119,7 +122,7 @@ exports.fundVUSDCard = asyncHandler(async (req, res, next) => {
       totalRate
     );
 
-    const { amount, card_id } = req.body;
+    const { amount } = req.body;
 
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -155,7 +158,7 @@ exports.fundVUSDCard = asyncHandler(async (req, res, next) => {
 
     // Assuming you have a service to fund the virtual card
     const result = await fundVirtualUSDCard({
-      card_id,
+      card_id: user.vusd_card,
       amount,
       customerEmail: user.email,
     });
@@ -185,7 +188,7 @@ exports.fundVUSDCard = asyncHandler(async (req, res, next) => {
 // Function to withdraw from the virtual USD card
 exports.withdrawFromVUSDCard = asyncHandler(async (req, res, next) => {
   try {
-    const { card_id, amount, mode } = req.body;
+    const { amount, mode } = req.body;
 
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -204,7 +207,7 @@ exports.withdrawFromVUSDCard = asyncHandler(async (req, res, next) => {
 
     // Assuming you have a service to withdraw from the virtual card
     const result = await withdrawFromVirtualUSDCard({
-      card_id,
+      card_id: user.vusd_card,
       amount,
       mode,
     });
@@ -233,7 +236,7 @@ exports.withdrawFromVUSDCard = asyncHandler(async (req, res, next) => {
 // Function to get card transactions
 exports.cardTransactions = asyncHandler(async (req, res, next) => {
   try {
-    const { card_id, mode } = req.body;
+    const { mode } = req.body;
 
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -250,7 +253,7 @@ exports.cardTransactions = asyncHandler(async (req, res, next) => {
       return res.status(403).json({ error: "KYC verification required" });
     }
 
-    const result = await getCardTransactions({ card_id, mode });
+    const result = await getCardTransactions({ card_id: user.vusd_card, mode });
 
     if (result) {
       return res.status(200).json({ success: true, data: result });
@@ -276,7 +279,7 @@ exports.cardTransactions = asyncHandler(async (req, res, next) => {
 
 exports.cardDetails = asyncHandler(async (req, res, next) => {
   try {
-    const { card_id, mode } = req.body;
+    const { mode } = req.body;
 
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -294,7 +297,7 @@ exports.cardDetails = asyncHandler(async (req, res, next) => {
     }
 
     // Assuming you have a service to get card details
-    const result = await getCardDetails({ card_id, mode });
+    const result = await getCardDetails({ card_id: user.vusd_card, mode });
 
     if (result) {
       return res.status(200).json({ success: true, data: result });
