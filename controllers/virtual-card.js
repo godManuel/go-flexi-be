@@ -122,7 +122,7 @@ exports.fundVUSDCard = asyncHandler(async (req, res, next) => {
       totalRate
     );
 
-    const { amount } = req.body;
+    const { card_id, amount } = req.body;
 
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -188,7 +188,7 @@ exports.fundVUSDCard = asyncHandler(async (req, res, next) => {
 // Function to withdraw from the virtual USD card
 exports.withdrawFromVUSDCard = asyncHandler(async (req, res, next) => {
   try {
-    const { amount, mode } = req.body;
+    const { card_id, amount, mode } = req.body;
 
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -236,7 +236,7 @@ exports.withdrawFromVUSDCard = asyncHandler(async (req, res, next) => {
 // Function to get card transactions
 exports.cardTransactions = asyncHandler(async (req, res, next) => {
   try {
-    const { mode } = req.body;
+    const { card_id, mode } = req.body;
 
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -279,7 +279,7 @@ exports.cardTransactions = asyncHandler(async (req, res, next) => {
 
 exports.cardDetails = asyncHandler(async (req, res, next) => {
   try {
-    const { mode } = req.body;
+    const { card_id, mode } = req.body;
 
     const user = await User.findById(req.user.id);
     if (!user) {
