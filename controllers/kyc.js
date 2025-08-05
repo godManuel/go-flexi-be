@@ -53,7 +53,7 @@ exports.confirmBvn = asyncHandler(async (req, res, next) => {
     }
 
     if (result) {
-      await User.findByIdAndUpdate(
+      const savedUser = await User.findByIdAndUpdate(
         req.user.id,
         {
           bvnVerified: true,
@@ -62,9 +62,9 @@ exports.confirmBvn = asyncHandler(async (req, res, next) => {
         },
         { new: true }
       );
-    }
 
-    res.status(200).json({ success: true, data: result });
+      res.status(200).json({ success: true, data: savedUser });
+    }
   } catch (error) {
     if (error.response && error.response.data) {
       console.error(error.response?.data || error.message);

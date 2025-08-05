@@ -446,3 +446,23 @@ exports.getCardDetails = async ({ card_id, mode }) => {
 
   return response.data;
 };
+
+exports.createUSDTAddress = async ({ label, webhook_url, mode, vip_key }) => {
+  const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
+  const url = "https://strowallet.com/api/generate-address/";
+
+  const response = await axios.post(url, {
+    public_key: STRO_PUB_KEY,
+    label,
+    webhook_url,
+    mode,
+    vip_key,
+  }, {
+    headers: {
+      accept: "application/json",
+    },
+  });
+
+  return response.data;
+  
+}
