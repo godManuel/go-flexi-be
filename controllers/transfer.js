@@ -77,6 +77,28 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
       .json({ error: "User lookup failed", details: err.message });
   }
 
+  let account_name;
+  try {
+    const nameResp = await axios.post(
+      "https://strowallet.com/api/banks/get-customer-name/",
+      {
+        public_key: process.env.STROWALLET_PUBLIC_KEY,
+        account_number,
+        bank_code,
+      },
+      { headers: { accept: "application/json" } }
+    );
+    account_name = nameResp.data?.account_name;
+    if (!account_name) {
+      return res.status(400).json({ error: "Account name not found" });
+    }
+  } catch (err) {
+    const apiError = err.response?.data || err.message;
+    return res
+      .status(502)
+      .json({ error: "Failed to verify account name", details: apiError });
+  }
+
   // Send request to StroWallet
   let resp;
   try {
@@ -100,10 +122,14 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
       user: req.user.id,
     });
 
+    // Deduct totalRequired from user's accountBalance
+    user.accountBalance -= totalRequired;
+    const savedUser = await user.save();
+
     // Success resp
     return res
       .status(200)
-      .json({ message: "Transfer completed", success: true, data: transfer });
+      .json({ message: "Transfer completed", success: true, data: savedUser });
   } catch (err) {
     return res
       .status(500)
