@@ -300,9 +300,9 @@ exports.addBeneficiary = asyncHandler(async (req, res, next) => {
 
     if (result) {
       user.beneficiaries.push({
-        beneficiaryType,
-        bankName,
-        accountNumber,
+        beneficiaryType: beneficiary_type,
+        bankName: bank_name,
+        accountNumber: account_number,
         accountName: result.data.account_name,
       });
 
