@@ -32,7 +32,7 @@ router.post("/notify-all", protect, authorize('admin'), sendNotificationToUsers)
 
 router.post("/notify", protect, authorize('admin'), sendNotificationToUser);
 
-router.post('/add-beneficiary', addBeneficiary)
+router.post('/add-beneficiary', protect, authorize('user'), addBeneficiary)
 
 // router.post("/get-net-amount", getNetAmount);
 // router.post("/process-batches", processInBatches);
