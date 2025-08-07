@@ -94,7 +94,7 @@ const userSchema = new mongoose.Schema(
     beneficiaries: [beneficiarySchema],
     tier: {
       type: String, 
-      enum: ["Individual", "Business", "Merchant"],
+      enum: ["individual", "business", "merchant"],
       default: "Individual"
     }
   },

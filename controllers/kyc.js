@@ -108,6 +108,7 @@ exports.verifyNin = asyncHandler(async (req, res, next) => {
         {
           ninVerified: true,
           isKYC: "verified",
+          tier: "business",
           $inc: { accountBalance: -1000 }
         },
         { new: true }
