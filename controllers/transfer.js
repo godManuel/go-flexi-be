@@ -79,7 +79,7 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
 
   let account_name;
   try {
-    const nameResp = await axios.post(
+    const nameResp = await axios.get(
       "https://strowallet.com/api/banks/get-customer-name/",
       {
         public_key: process.env.STROWALLET_PUBLIC_KEY,
