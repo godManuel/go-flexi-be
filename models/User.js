@@ -95,7 +95,7 @@ const userSchema = new mongoose.Schema(
     tier: {
       type: String, 
       enum: ["individual", "business", "merchant"],
-      default: "Individual"
+      default: "individual"
     }
   },
   { timestamps: true }

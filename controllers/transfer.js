@@ -69,7 +69,7 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
       return res.status(400).json({ error: "Insufficient funds" });
     }
 
-    if (user.isKYC !== "verified" && user.tier === 'business') {
+    if (user.isKYC !== "verified" && user.tier === "business") {
       return res.status(403).json({ error: "KYC verification required" });
     }
   } catch (err) {
