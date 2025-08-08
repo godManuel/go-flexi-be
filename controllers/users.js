@@ -263,57 +263,77 @@ exports.sendNotificationToUsers = asyncHandler(async (req, res, next) => {
 
 exports.addBeneficiary = asyncHandler(async (req, res, next) => {
   const { beneficiary_type, bank_name, account_number } = req.body;
+
+  // Validate input
   if (!beneficiary_type || !bank_name || !account_number) {
-    return next(
-      new ErrorResponse(
-        "Beneficiary type, bank name and account number are required",
-        400
-      )
-    );
+    return res.status(400).json({
+      success: false,
+      error: "Beneficiary type, bank name and account number are required",
+    });
   }
 
   const user = await User.findById(req.user.id);
   if (!user) {
-    return next(new ErrorResponse("User not found", 404));
+    return res.status(404).json({
+      success: false,
+      error: "User not found",
+    });
   }
 
-  if (user.beneficiaries.some((b) => b.accountNumber === accountNumber)) {
-    return next(new ErrorResponse("Beneficiary already exists", 400));
+  // Check for duplicate beneficiary
+  if (user.beneficiaries.some(b => b.accountNumber === account_number)) {
+    return res.status(400).json({
+      success: false,
+      error: "Beneficiary already exists",
+    });
   }
 
+  // Find bank code
   const matchedBank = bankCodes.find(
-    (bank) =>
-      bank.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim()
+    bank => bank.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim()
   );
   if (!matchedBank) {
-    return res
-      .status(400)
-      .json({ error: `Unsupported bank name: ${bank_name}` });
+    return res.status(400).json({
+      success: false,
+      error: `Unsupported bank name: ${bank_name}`,
+    });
   }
   const bank_code = matchedBank.bankCode;
 
+  // Validate account number and get account name
+  let accountName;
   try {
-    const result = await getReceiverAcctName({
-      account_number,
-      bank_code,
-    });
-
-    if (result) {
-      user.beneficiaries.push({
-        beneficiaryType: beneficiary_type,
-        bankName: bank_name,
-        accountNumber: account_number,
-        accountName: result.data.account_name,
+    const result = await getReceiverAcctName({ account_number, bank_code });
+    if (!result || !result.data || !result.data.account_name) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid account number or unable to fetch account name",
       });
-
-      await user.save();
-
-      res.status(201).json({ success: true, data: user.beneficiaries });
     }
+    accountName = result.data.account_name;
   } catch (error) {
     console.error("Error checking account name:", error);
-    return next(new ErrorResponse("Failed to check account name", 500));
+    return res.status(500).json({
+      success: false,
+      error: "Failed to check account name",
+    });
   }
+
+  // Add beneficiary
+  user.beneficiaries.push({
+    beneficiaryType: beneficiary_type,
+    bankName: bank_name,
+    accountNumber: account_number,
+    accountName,
+  });
+
+  await user.save();
+
+  return res.status(201).json({
+    success: true,
+    message: "Beneficiary added successfully",
+    beneficiaries: user.beneficiaries,
+  });
 });
 
 // const processUser = async (user) => {
