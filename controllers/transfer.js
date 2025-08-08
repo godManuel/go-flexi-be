@@ -68,15 +68,15 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
   }
 
   // Send request to StroWallet
-  let resp;
+  let respon;
   try {
-    resp = await axios.post(
+    respon = await axios.post(
       "https://strowallet.com/api/banks/request/",
       payload,
       { headers: { accept: "application/json" } }
     );
   } catch (err) {
-    const apiError = err.resp?.data || err.message;
+    const apiError = err.respon?.data || err.message;
     return res
       .status(502)
       .json({ error: "StroWallet request failed", details: apiError });
