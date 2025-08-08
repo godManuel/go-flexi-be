@@ -281,16 +281,24 @@ exports.addBeneficiary = asyncHandler(async (req, res, next) => {
   }
 
   // Check for duplicate beneficiary
-  if (user.beneficiaries.some(b => b.accountNumber === account_number)) {
+  if (
+    user.beneficiaries.some(
+      (b) =>
+        b.accountNumber === account_number &&
+        b.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim()
+    )
+  ) {
     return res.status(400).json({
       success: false,
-      error: "Beneficiary already exists",
+      error:
+        "Beneficiary with this account number and bank name already exists",
     });
   }
 
   // Find bank code
   const matchedBank = bankCodes.find(
-    bank => bank.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim()
+    (bank) =>
+      bank.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim()
   );
   if (!matchedBank) {
     return res.status(400).json({
