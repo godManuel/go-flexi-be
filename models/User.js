@@ -154,19 +154,35 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 };
 
 /* TASK -> Generate user OTP for Email Verification */
+// userSchema.methods.getEmailOTP = async function () {
+//   let otp = Math.floor(100000 + Math.random() * 900000);
+//   otp = otp.toString();
+
+//   // Encrypt OTP and save in current user's database
+//   const salt = await bcrypt.genSalt(10);
+//   this.emailOTP = await bcrypt.hash(otp, salt);
+
+//   // Set the OTP Expiration to 30 minutes ahead
+//   this.emailOTPExpire = Date.now() + 30 * 60 * 1000;
+
+//   return otp;
+// };
+
 userSchema.methods.getEmailOTP = async function () {
-  let otp = Math.floor(100000 + Math.random() * 900000);
-  otp = otp.toString();
+  // Generate a 6-digit OTP string, padded with leading zeros if necessary
+  const otp = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
 
   // Encrypt OTP and save in current user's database
   const salt = await bcrypt.genSalt(10);
   this.emailOTP = await bcrypt.hash(otp, salt);
 
-  // Set the OTP Expiration to 30 minutes ahead
+  // Set the OTP expiration to 30 minutes from now
   this.emailOTPExpire = Date.now() + 30 * 60 * 1000;
 
   return otp;
 };
+
+
 
 /* TASK -> Compare emailOTP with req.body.emailOTP  */
 userSchema.methods.verifyEmailOTP = async function (enteredOTP) {
