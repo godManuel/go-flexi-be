@@ -7,42 +7,41 @@ const User = require("../models/User.js");
 const { getReceiverAcctName } = require("../services/stroWalletService.js");
 
 exports.bankTransfer = asyncHandler(async (req, res, next) => {
-  const {
-    amount,
-    account_number,
-    narration,
-    name_enquiry_reference,
-    SenderName,
-    bank_name,
-  } = req.query;
-
-  // Find bank code
-  const matchedBank = bankCodes.find(
-    (bank) =>
-      bank.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim()
-  );
-  if (!matchedBank) {
-    return res
-      .status(400)
-      .json({ error: `Unsupported bank name: ${bank_name}` });
-  }
-  const bank_code = matchedBank.bankCode;
-
-  // Prepare payload
-  const payload = {
-    public_key: process.env.STROWALLET_PUBLIC_KEY,
-    amount,
-    bank_code,
-    account_number,
-    narration,
-    name_enquiry_reference,
-  };
-  if (SenderName) payload.SenderName = SenderName;
-
-  // Validate user and balance
-  let user;
   try {
-    user = await User.findById(req.user.id);
+    const {
+      amount,
+      account_number,
+      narration,
+      name_enquiry_reference,
+      SenderName,
+      bank_name,
+    } = req.query;
+
+    // Find bank code
+    const matchedBank = bankCodes.find(
+      (bank) =>
+        bank.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim()
+    );
+    if (!matchedBank) {
+      return res
+        .status(400)
+        .json({ error: `Unsupported bank name: ${bank_name}` });
+    }
+    const bank_code = matchedBank.bankCode;
+
+    // Prepare payload
+    const payload = {
+      public_key: process.env.STROWALLET_PUBLIC_KEY,
+      amount,
+      bank_code,
+      account_number,
+      narration,
+      name_enquiry_reference,
+    };
+    if (SenderName) payload.SenderName = SenderName;
+
+    // Validate user and balance
+    const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -51,7 +50,7 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
     const totalRequired = transferAmount + transferFee;
 
     if (user.accountBalance < 5000) {
-      return next(new ErrorResponse("Insufficient Funds", 400));
+      return res.status(400).json({ error: "Insufficient Funds" });
     }
 
     if (user.accountBalance < totalRequired) {
@@ -61,29 +60,15 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
     if (user.isKYC !== "verified" && user.tier === "business") {
       return res.status(403).json({ error: "KYC verification required" });
     }
-  } catch (err) {
-    return res
-      .status(500)
-      .json({ error: "User lookup failed", details: err.message });
-  }
 
-  // Send request to StroWallet
-  let respon;
-  try {
-    respon = await axios.post(
+    // Send request to StroWallet
+    const respon = await axios.post(
       "https://strowallet.com/api/banks/request/",
       payload,
       { headers: { accept: "application/json" } }
     );
-  } catch (err) {
-    const apiError = err.respon?.data || err.message;
-    return res
-      .status(502)
-      .json({ error: "StroWallet request failed", details: apiError });
-  }
 
-  // Save to DB
-  try {
+    // Save to DB
     const transfer = await Transfer.create({
       ...payload,
       bank_name,
@@ -94,14 +79,16 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
     user.accountBalance -= totalRequired;
     const savedUser = await user.save();
 
-    // Success resp
+    // Success response
     return res
       .status(200)
       .json({ message: "Transfer completed", success: true, data: savedUser });
   } catch (err) {
+    // Handle errors from any step
+    let details = err.response?.data || err.message;
     return res
       .status(500)
-      .json({ error: "Failed to save transfer", details: err.message });
+      .json({ error: "Bank transfer failed", details });
   }
 });
 
