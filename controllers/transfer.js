@@ -16,17 +16,6 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
     bank_name,
   } = req.query;
 
-  // Validate required fields
-  if (
-    !amount ||
-    !account_number ||
-    !narration ||
-    !name_enquiry_reference ||
-    !bank_name
-  ) {
-    return res.status(400).json({ error: "Missing required fields" });
-  }
-
   // Find bank code
   const matchedBank = bankCodes.find(
     (bank) =>
