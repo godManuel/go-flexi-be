@@ -4,6 +4,8 @@ const asyncHandler = require("../middlewares/async");
 const ErrorResponse = require("../utils/errorResponse");
 const { sendEmail } = require("../utils/sendEmail");
 const { calcNetAmount } = require("../utils/calcNetAmount");
+const { getReceiverAcctName } = require("../services/stroWalletService.js");
+const { bankCodes } = require("../config/bankCodes.js");
 // const axios = require("axios");
 
 exports.getUser = asyncHandler(async (req, res, next) => {
@@ -256,6 +258,61 @@ exports.sendNotificationToUsers = asyncHandler(async (req, res, next) => {
   } catch (error) {
     console.error(error);
     return next(new ErrorResponse("Failed to send emails", 500));
+  }
+});
+
+exports.addBeneficiary = asyncHandler(async (req, res, next) => {
+  const { beneficiary_type, bank_name, account_number } = req.body;
+  if (!beneficiary_type || !bank_name || !account_number) {
+    return next(
+      new ErrorResponse(
+        "Beneficiary type, bank name and account number are required",
+        400
+      )
+    );
+  }
+
+  const user = await User.findById(req.user.id);
+  if (!user) {
+    return next(new ErrorResponse("User not found", 404));
+  }
+
+  if (user.beneficiaries.some((b) => b.accountNumber === accountNumber)) {
+    return next(new ErrorResponse("Beneficiary already exists", 400));
+  }
+
+  const matchedBank = bankCodes.find(
+    (bank) =>
+      bank.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim()
+  );
+  if (!matchedBank) {
+    return res
+      .status(400)
+      .json({ error: `Unsupported bank name: ${bank_name}` });
+  }
+  const bank_code = matchedBank.bankCode;
+
+  try {
+    const result = await getReceiverAcctName({
+      account_number,
+      bank_code,
+    });
+
+    if (result) {
+      user.beneficiaries.push({
+        beneficiaryType,
+        bankName,
+        accountNumber,
+        accountName: result.data.account_name,
+      });
+
+      await user.save();
+
+      res.status(201).json({ success: true, data: user.beneficiaries });
+    }
+  } catch (error) {
+    console.error("Error checking account name:", error);
+    return next(new ErrorResponse("Failed to check account name", 500));
   }
 });
 

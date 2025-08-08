@@ -466,3 +466,26 @@ exports.createUSDTAddress = async ({ label, webhook_url, mode, vip_key }) => {
   return response.data;
   
 }
+
+
+exports.getReceiverAcctName = async ({ bank_code, account_number }) => {
+  const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
+  const url = "https://strowallet.com/api/banks/get-customer-name/";
+
+  const response = await axios.get(
+    url,
+    {
+      headers: {
+        accept: "application/json",
+      },
+      params: {
+        public_key: STRO_PUB_KEY,
+        bank_code,
+        account_number,
+      },
+    }
+  );
+
+  return response.data;
+};
+

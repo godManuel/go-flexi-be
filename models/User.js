@@ -4,6 +4,17 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const validator = require("validator");
 
+const beneficiarySchema = new mongoose.Schema({
+  beneficiaryType: {
+    type: String,
+    enum: ["individual", "business"],
+    required: true,
+  },
+  bankName: { type: String, required: true },
+  accountNumber: { type: String, required: true },
+  accountName: { type: String, required: true },
+});
+
 const userSchema = new mongoose.Schema(
   {
     fullName: {
@@ -55,10 +66,10 @@ const userSchema = new mongoose.Schema(
     },
     bvnVerified: {
       type: Boolean,
-      default: false, 
+      default: false,
     },
     ninVerified: {
-      type: Boolean,  
+      type: Boolean,
       default: false,
     },
     transactions: [
@@ -77,10 +88,15 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
-    // dailyTransactionLimit: { }
     vusd_card: String,
     emailOTP: String,
     emailOTPExpire: Date,
+    beneficiaries: [beneficiarySchema],
+    tier: {
+      type: String, 
+      enum: ["Individual", "Business", "Merchant"],
+      default: "Individual"
+    }
   },
   { timestamps: true }
 );
@@ -109,7 +125,7 @@ userSchema.methods.getResetPasswordToken = async function () {
   this.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // Token valid for 10 minutes
 
   return otp;
-}
+};
 
 /* TASK -> Compare resetPasswordToken with req.body.resetPasswordToken */
 userSchema.methods.verifyResetPasswordToken = async function (enteredOTP) {
@@ -123,7 +139,7 @@ userSchema.methods.getSignedToken = function () {
       id: this.id,
       email: this.email,
       accountNumber: this.accountNumber,
-      role: this.role
+      role: this.role,
     },
     process.env.JWT_SECRET,
     {

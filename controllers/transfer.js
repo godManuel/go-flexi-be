@@ -4,6 +4,7 @@ const axios = require("axios");
 const { bankCodes } = require("../config/bankCodes.js");
 const Transfer = require("../models/Transfer.js");
 const User = require("../models/User.js");
+const { getReceiverAcctName } = require("../services/stroWalletService.js");
 
 exports.bankTransfer = asyncHandler(async (req, res, next) => {
   const {
@@ -77,28 +78,6 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
       .json({ error: "User lookup failed", details: err.message });
   }
 
-  let account_name;
-  try {
-    const nameResp = await axios.get(
-      "https://strowallet.com/api/banks/get-customer-name/",
-      {
-        public_key: process.env.STROWALLET_PUBLIC_KEY,
-        account_number,
-        bank_code,
-      },
-      { headers: { accept: "application/json" } }
-    );
-    account_name = nameResp.data?.account_name;
-    if (!account_name) {
-      return res.status(400).json({ error: "Account name not found" });
-    }
-  } catch (err) {
-    const apiError = err.response?.data || err.message;
-    return res
-      .status(502)
-      .json({ error: "Failed to verify account name", details: apiError });
-  }
-
   // Send request to StroWallet
   let resp;
   try {
@@ -134,5 +113,40 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
     return res
       .status(500)
       .json({ error: "Failed to save transfer", details: err.message });
+  }
+});
+
+exports.checkAccountName = asyncHandler(async (req, res, next) => {
+  const { account_number, bank_name } = req.query;
+
+  // Validate required fields
+  if (!account_number) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  // Find bank code
+  const matchedBank = bankCodes.find(
+    (bank) =>
+      bank.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim()
+  );
+  if (!matchedBank) {
+    return res
+      .status(400)
+      .json({ error: `Unsupported bank name: ${bank_name}` });
+  }
+  const bank_code = matchedBank.bankCode;
+
+  try {
+    const result = await getReceiverAcctName({
+      account_number,
+      bank_code,
+    });
+
+    if (result) {
+      return res.status(200).json({ success: true, data: result });
+    }
+  } catch (error) {
+    console.error("Error checking account name:", error);
+    return next(new ErrorResponse("Failed to check account name", 500));
   }
 });
