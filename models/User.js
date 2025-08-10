@@ -93,10 +93,19 @@ const userSchema = new mongoose.Schema(
     emailOTPExpire: Date,
     beneficiaries: [beneficiarySchema],
     tier: {
-      type: String, 
+      type: String,
       enum: ["individual", "business", "merchant"],
-      default: "individual"
-    }
+      default: "individual",
+    },
+    dailyTransferLimit: { type: Number, default: 0 },
+    monthlyTransferLimit: { type: Number, default: 0 },
+
+    lastDailyReset: { type: Date },
+    lastMonthlyReset: { type: Date },
+    lastTransferTime: { type: Date },
+
+    dailyTransferAmount: { type: Number, default: 0 },
+    monthlyTransferAmount: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
@@ -170,7 +179,9 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 
 userSchema.methods.getEmailOTP = async function () {
   // Generate a 6-digit OTP string, padded with leading zeros if necessary
-  const otp = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+  const otp = Math.floor(Math.random() * 1000000)
+    .toString()
+    .padStart(6, "0");
 
   // Encrypt OTP and save in current user's database
   const salt = await bcrypt.genSalt(10);
@@ -181,8 +192,6 @@ userSchema.methods.getEmailOTP = async function () {
 
   return otp;
 };
-
-
 
 /* TASK -> Compare emailOTP with req.body.emailOTP  */
 userSchema.methods.verifyEmailOTP = async function (enteredOTP) {

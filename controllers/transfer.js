@@ -5,6 +5,7 @@ const { bankCodes } = require("../config/bankCodes.js");
 const Transfer = require("../models/Transfer.js");
 const User = require("../models/User.js");
 const { getReceiverAcctName } = require("../services/stroWalletService.js");
+const { enforceTransferLimits } = require("./enforceTransferLimits");
 
 exports.bankTransfer = asyncHandler(async (req, res, next) => {
   try {
@@ -61,6 +62,8 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
       return res.status(403).json({ error: "KYC verification required" });
     }
 
+    await enforceTransferLimits(user._id, transferAmount);
+
     // Send request to StroWallet
     const respon = await axios.post(
       "https://strowallet.com/api/banks/request/",
@@ -86,9 +89,7 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
   } catch (err) {
     // Handle errors from any step
     let details = err.response?.data || err.message;
-    return res
-      .status(500)
-      .json({ error: "Bank transfer failed", details });
+    return res.status(500).json({ error: "Bank transfer failed", details });
   }
 });
 
