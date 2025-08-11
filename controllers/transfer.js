@@ -5,7 +5,7 @@ const { bankCodes } = require("../config/bankCodes.js");
 const Transfer = require("../models/Transfer.js");
 const User = require("../models/User.js");
 const { getReceiverAcctName } = require("../services/stroWalletService.js");
-const { enforceTransferLimits } = require("./enforceTransferLimits");
+const { enforceTransferLimits } = require("../utils/enforceTransferLimits.js");
 
 exports.bankTransfer = asyncHandler(async (req, res, next) => {
   try {
