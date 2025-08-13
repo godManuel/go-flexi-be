@@ -30,7 +30,7 @@ router.get('/transactions', protect, authorize('admin'), getAllUserTransactions)
 
 router.post("/notify-all", protect, authorize('admin'), sendNotificationToUsers)
 
-router.post("/notify", protect, authorize('admin'), sendNotificationToUser);
+router.post("/notify", sendNotificationToUser);
 
 router.post('/add-beneficiary', protect, authorize('user'), addBeneficiary)
 

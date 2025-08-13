@@ -122,9 +122,10 @@ userSchema.pre("save", async function (next) {
 
 /* TASK -> Generate user reset password token */
 userSchema.methods.getResetPasswordToken = async function () {
-  // Generate a token
-  let otp = Math.floor(10000 + Math.random() * 90000);
-  otp = otp.toString();
+  // Generate a 6-digit OTP string, padded with leading zeros if necessary
+  const otp = Math.floor(Math.random() * 1000000)
+    .toString()
+    .padStart(6, "0");
 
   // Encrypt OTP and save in current user's database
   const salt = await bcrypt.genSalt(10);
