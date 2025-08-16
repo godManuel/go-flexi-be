@@ -108,8 +108,6 @@ exports.verifyNin = asyncHandler(async (req, res, next) => {
         req.user.id,
         {
           ninVerified: true,
-          isKYC: "verified",
-          tier: "business",
           $inc: { accountBalance: -1000 },
         },
         { new: true }
@@ -175,10 +173,9 @@ exports.verifyCac = asyncHandler(async (req, res, next) => {
       const savedUser = await User.findByIdAndUpdate(
         req.user.id,
         {
-          ninVerified: true,
+          cacVerified: true,
           isKYC: "verified",
           tier: "business",
-          $inc: { accountBalance: -1000 },
         },
         { new: true }
       );
