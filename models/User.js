@@ -72,6 +72,10 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    cacVerified: {
+      type: Boolean,
+      default: false,
+    },
     transactions: [
       {
         type: mongoose.Schema.Types.ObjectId,

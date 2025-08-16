@@ -2,6 +2,7 @@ const {
   verifyBVN,
   confirmBVN,
   verifyNIN,
+  verifyCAC
 } = require("../services/stroWalletService");
 const asyncHandler = require("../middlewares/async");
 const User = require("../models/User");
@@ -58,7 +59,7 @@ exports.confirmBvn = asyncHandler(async (req, res, next) => {
         {
           bvnVerified: true,
           isKYC: "verified",
-          $inc: { accountBalance: -1000 }
+          $inc: { accountBalance: -1000 },
         },
         { new: true }
       );
@@ -109,7 +110,7 @@ exports.verifyNin = asyncHandler(async (req, res, next) => {
           ninVerified: true,
           isKYC: "verified",
           tier: "business",
-          $inc: { accountBalance: -1000 }
+          $inc: { accountBalance: -1000 },
         },
         { new: true }
       );
@@ -131,5 +132,69 @@ exports.verifyNin = asyncHandler(async (req, res, next) => {
 });
 
 exports.verifyCac = asyncHandler(async (req, res, next) => {
-  
-})
+  try {
+    const {
+      rc_number,
+      company_type,
+      entity_type,
+      company_name,
+      surname,
+      firstname,
+      email,
+      phoneNumber,
+      gender,
+      city,
+      occupation,
+    } = req.query;
+
+    const user = await User.findById({ _id: req.user.id });
+    if (!user) {
+      return next(new ErrorResponse("User not found", 404));
+    }
+
+    if (user.accountBalance < 5000) {
+      return next(new ErrorResponse("Insufficient Funds", 400));
+    }
+
+    const result = await verifyCAC({
+      rc_number,
+      company_type,
+      entity_type,
+      company_name,
+      surname,
+      firstname,
+      email,
+      phoneNumber,
+      gender,
+      city,
+      occupation,
+    });
+
+    // Optionally update user NIN status here
+    if (result) {
+      const savedUser = await User.findByIdAndUpdate(
+        req.user.id,
+        {
+          ninVerified: true,
+          isKYC: "verified",
+          tier: "business",
+          $inc: { accountBalance: -1000 },
+        },
+        { new: true }
+      );
+
+      res.status(200).json({ success: true, data: savedUser });
+    }
+  } catch (error) {
+    if (error.response && error.response.data) {
+      console.error(error.response?.data || error.message);
+      return next(
+        new ErrorResponse(
+          error.response.data.message || "Strowallet NIN verification failed",
+          error.response.status || 500
+        )
+      );
+    }
+    return next(new ErrorResponse(error.message || "Server Error", 500));
+  }
+});
