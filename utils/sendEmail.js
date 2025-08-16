@@ -5,16 +5,15 @@ exports.sendEmail = async (to, subject, template, context) => {
   const hbs = (await import("nodemailer-express-handlebars")).default;
 
   const transporter = nodemailer.createTransport({
-    host: "mail.rulsar.com", // Your SMTP server
-    port: 587, // SMTP Port
-    secure: false, // Use STARTTLS instead of SSL
+    host: "mail.rulsar.com",
+    port: 465, // SSL port
+    secure: true, // true because 465 uses SSL
     auth: {
-      user: process.env.AUTH_EMAIL, // Your email
-      pass: process.env.AUTH_PASS, // Your email password
+      user: process.env.AUTH_EMAIL,
+      pass: process.env.AUTH_PASS, // your email account password
     },
-    tls: {
-      rejectUnauthorized: false, // Accept self-signed or unverified certificates (if needed)
-    },
+    connectionTimeout: 10000, // 10s timeout
+    socketTimeout: 10000,
   });
 
   // Set viewPath to the root folder dynamically
