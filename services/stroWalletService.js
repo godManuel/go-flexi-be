@@ -451,37 +451,18 @@ exports.createUSDTAddress = async ({ label, webhook_url, mode, vip_key }) => {
   const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
   const url = "https://strowallet.com/api/generate-address/";
 
-  const response = await axios.post(url, {
-    public_key: STRO_PUB_KEY,
-    label,
-    webhook_url,
-    mode,
-    vip_key,
-  }, {
-    headers: {
-      accept: "application/json",
-    },
-  });
-
-  return response.data;
-  
-}
-
-
-exports.getReceiverAcctName = async ({ bank_code, account_number }) => {
-  const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
-  const url = "https://strowallet.com/api/banks/get-customer-name/";
-
-  const response = await axios.get(
+  const response = await axios.post(
     url,
+    {
+      public_key: STRO_PUB_KEY,
+      label,
+      webhook_url,
+      mode,
+      vip_key,
+    },
     {
       headers: {
         accept: "application/json",
-      },
-      params: {
-        public_key: STRO_PUB_KEY,
-        bank_code,
-        account_number,
       },
     }
   );
@@ -489,3 +470,96 @@ exports.getReceiverAcctName = async ({ bank_code, account_number }) => {
   return response.data;
 };
 
+exports.getReceiverAcctName = async ({ bank_code, account_number }) => {
+  const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
+  const url = "https://strowallet.com/api/banks/get-customer-name/";
+
+  const response = await axios.get(url, {
+    headers: {
+      accept: "application/json",
+    },
+    params: {
+      public_key: STRO_PUB_KEY,
+      bank_code,
+      account_number,
+    },
+  });
+
+  return response.data;
+};
+
+exports.getNINDetails = async ({ number_nin }) => {
+  const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
+  const url = "https://strowallet.com/api/kyc_getnin/";
+
+  const response = await axios.get(url, {
+    headers: {
+      accept: "application/json",
+    },
+    params: {
+      public_key: STRO_PUB_KEY,
+      number_nin,
+    },
+  });
+
+  return response.data;
+};
+
+exports.getBVNDetails = async ({ number }) => {
+  const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
+  const url = "https://strowallet.com/api/kyc_getbvn/";
+
+  const response = await axios.get(url, {
+    headers: {
+      accept: "application/json",
+    },
+    params: {
+      public_key: STRO_PUB_KEY,
+      number,
+    },
+  });
+
+  return response.data;
+};
+
+exports.verifyCAC = async ({
+  rc_number,
+  company_type,
+  entity_type,
+  company_name,
+  surname,
+  firstname,
+  email,
+  phoneNumber,
+  gender,
+  city,
+  occupation,
+}) => {
+  const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
+  const url = "https://strowallet.com/api/kyb_cac/";
+
+  const response = await axios.post(
+    url,
+    {
+      public_key: STRO_PUB_KEY,
+      rc_number,
+      company_type,
+      entity_type,
+      company_name,
+      surname,
+      firstname,
+      email,
+      phoneNumber,
+      gender,
+      city,
+      occupation,
+    },
+    {
+      headers: {
+        accept: "application/json",
+      },
+    }
+  );
+
+  return response.data;
+};

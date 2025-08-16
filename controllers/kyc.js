@@ -129,4 +129,7 @@ exports.verifyNin = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse(error.message || "Server Error", 500));
   }
 });
-//
+
+exports.verifyCac = asyncHandler(async (req, res, next) => {
+  
+})
