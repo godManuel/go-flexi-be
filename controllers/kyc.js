@@ -195,3 +195,7 @@ exports.verifyCac = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse(error.message || "Server Error", 500));
   }
 });
+
+exports.corporateBusiness = asyncHandler(async (req, res, next) => {
+  
+})
