@@ -78,6 +78,8 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
       user: req.user.id,
     });
 
+    await transfer.save()
+
     // Deduct totalRequired from user's accountBalance
     user.accountBalance -= totalRequired;
     const savedUser = await user.save();

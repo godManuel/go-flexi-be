@@ -1,11 +1,25 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { protect, authorize } = require('../middlewares/auth');
-const { verifyBvn, confirmBvn, verifyNin, verifyCac } = require('../controllers/kyc');
+const { protect, authorize } = require("../middlewares/auth");
+const {
+  verifyBvn,
+  confirmBvn,
+  verifyNin,
+  verifyCac,
+  verifyCorporateBusiness,
+} = require("../controllers/kyc");
+const upload = require("../utils/multer");
 
-router.post('/verify-bvn', protect, authorize('user'), verifyBvn);
-router.post('/confirm-bvn', protect, authorize('user'), confirmBvn);
-router.post('/verify-nin', protect, authorize('user'), verifyNin);
-router.psot("/verify-cac", protect, authorize("user"), verifyCac)
+router.post("/verify-bvn", protect, authorize("user"), verifyBvn);
+router.post("/confirm-bvn", protect, authorize("user"), confirmBvn);
+router.post("/verify-nin", protect, authorize("user"), verifyNin);
+router.post("/verify-cac", protect, authorize("user"), verifyCac);
+router.post(
+  "/verify-corporate-business",
+  protect,
+  authorize("user"),
+  verifyCorporateBusiness,
+  upload.single("image")
+);
 
 module.exports = router;

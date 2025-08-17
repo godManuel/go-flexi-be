@@ -101,6 +101,10 @@ const userSchema = new mongoose.Schema(
       enum: ["individual", "business", "merchant"],
       default: "individual",
     },
+    corporateBiz: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'CorporateBiz'
+    },
     dailyTransferLimit: { type: Number, default: 0 },
     monthlyTransferLimit: { type: Number, default: 0 },
 

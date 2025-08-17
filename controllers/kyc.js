@@ -2,11 +2,17 @@ const {
   verifyBVN,
   confirmBVN,
   verifyNIN,
-  verifyCAC
+  verifyCAC,
 } = require("../services/stroWalletService");
 const asyncHandler = require("../middlewares/async");
 const User = require("../models/User");
 const ErrorResponse = require("../utils/errorResponse");
+const cloudinary = require("../utils/cloudinary.js");
+const fs = require("fs");
+// const axios = require("axios");
+const { bankCodes } = require("../config/bankCodes.js");
+const { getReceiverAcctName } = require("../services/stroWalletService.js");
+const CorporateBiz = require("../models/CorporateBiz.js");
 
 exports.verifyBvn = asyncHandler(async (req, res, next) => {
   try {
@@ -196,6 +202,68 @@ exports.verifyCac = asyncHandler(async (req, res, next) => {
   }
 });
 
-exports.corporateBusiness = asyncHandler(async (req, res, next) => {
-  
-})
+exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
+  const uploader = async (path) =>
+    await cloudinary.uploads(path, "rulsar");
+
+  const { path } = req.file;
+  const newPath = await uploader(path);
+  fs.unlinkSync(path);
+
+  const user = await User.findById({ _id: req.user.id });
+  if (!user) {
+    return next(new ErrorResponse("User not found", 404));
+  }
+
+  const { business_name, account_number, bank_name } = req.body;
+
+  const matchedBank = bankCodes.find(
+    (bank) =>
+      bank.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim()
+  );
+  if (!matchedBank) {
+    return res
+      .status(400)
+      .json({ error: `Unsupported bank name: ${bank_name}` });
+  }
+  const bank_code = matchedBank.bankCode;
+
+  try {
+    const result = await getReceiverAcctName({
+      account_number,
+      bank_code,
+    });
+
+    if (result) {
+      if (result.data.account_name !== business_name) {
+        return next(
+          new ErrorResponse(
+            "Not business account! Provide the account for your business", 400
+          )
+        );
+      }
+
+      const corporateBiz = await CorporateBiz.create({
+        businessName: business_name,
+        accountNumber: account_number,
+        bankName: bank_name,
+        accountName: result.data.account_name,
+        image: newPath.url,
+        user: req.user.id,
+      });
+
+      await corporateBiz.save();
+
+      const updatedUser = await User.findByIdAndUpdate(
+        req.user.id,
+        { corporateBiz: corporateBiz._id },
+        { new: true } // returns the updated user
+      ).populate("corporateBiz");
+
+      res.status(200).json({ success: true, data: updatedUser });
+    }
+  } catch (error) {
+    console.error("Error checking account name:", error);
+    return next(new ErrorResponse("Failed to check account name", 500));
+  }
+});
