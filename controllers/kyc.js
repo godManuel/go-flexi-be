@@ -57,8 +57,8 @@ exports.confirmBvn = asyncHandler(async (req, res, next) => {
       const savedUser = await User.findByIdAndUpdate(
         req.user.id,
         {
+          tier: "merchant",
           bvnVerified: true,
-          isKYC: "verified",
           $inc: { accountBalance: -1000 },
         },
         { new: true }
