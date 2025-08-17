@@ -235,13 +235,13 @@ exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
     });
 
     if (result) {
-      if (result.data.account_name !== business_name) {
-        return next(
-          new ErrorResponse(
-            "Not business account! Provide the account for your business", 400
-          )
-        );
-      }
+      // if (result.data.account_name !== business_name) {
+      //   return next(
+      //     new ErrorResponse(
+      //       "Not business account! Provide the account for your business", 400
+      //     )
+      //   );
+      // }
 
       const corporateBiz = await CorporateBiz.create({
         businessName: business_name,
