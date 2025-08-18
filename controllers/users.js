@@ -40,6 +40,18 @@ exports.getAllUsers = asyncHandler(async (req, res, next) => {
   });
 });
 
+exports.getUserByEmail = asyncHandler(async (req, res, next) => {
+  const user = await User.findOne({ email: req.body.email }).select(
+    "-password"
+  );
+  if (!user) return next(new ErrorResponse("User does not exist", 404));
+
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
 // Update user account balance if user account number is available in database. Only admin can update user account balance
 exports.creditUserBalance = asyncHandler(async (req, res, next) => {
   const { email, amount } = req.body;
