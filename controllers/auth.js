@@ -89,45 +89,45 @@ exports.loginUser = asyncHandler(async (req, res, next) => {
   if (!isMatch)
     return next(new ErrorResponse("Email or password incorrect", 401));
 
-  const token = user.getSignedToken();
+  // const token = user.getSignedToken();
 
-  // await user.save();
+  // // await user.save();
 
-  res.status(200).json({
-    success: true,
-    data: {
-      user,
-      token,
-    },
-  });
+  // res.status(200).json({
+  //   success: true,
+  //   data: {
+  //     user,
+  //     token,
+  //   },
+  // });
 
-  // const emailOTP = await user.getEmailOTP();
-  // await user.save();
+  const emailOTP = await user.getEmailOTP();
+  await user.save();
 
-  // try {
-  //   await sendEmail(
-  //     user.email,
-  //     `Your Verification Code is ${emailOTP}`,
-  //     "otp-verification",
-  //     {
-  //       name: user.fullName,
-  //       expiryTime: user.emailOTPExpire,
-  //       otp: emailOTP,
-  //     }
-  //   );
+  try {
+    await sendEmail(
+      user.email,
+      `Your Verification Code is ${emailOTP}`,
+      "otp-verification",
+      {
+        name: user.fullName,
+        expiryTime: user.emailOTPExpire,
+        otp: emailOTP,
+      }
+    );
 
-  //   res.status(200).json({
-  //     success: true,
-  //     data: {
-  //       email: user.email,
-  //       role: user.role,
-  //       message: "A confirmation code has been sent to your email",
-  //     },
-  //   });
-  // } catch (error) {
-  //   console.log(error);
-  //   return next(new ErrorResponse("Email could not be sent", 500));
-  // }
+    res.status(200).json({
+      success: true,
+      data: {
+        email: user.email,
+        role: user.role,
+        message: "A confirmation code has been sent to your email",
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    return next(new ErrorResponse("Email could not be sent", 500));
+  }
 });
 
 
