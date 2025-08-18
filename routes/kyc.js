@@ -18,8 +18,8 @@ router.post(
   "/verify-corporate-business",
   protect,
   authorize("user"),
-   upload.single("image"),
-  verifyCorporateBusiness,
+  upload.single("image"),
+  verifyCorporateBusiness
 );
 
 module.exports = router;
