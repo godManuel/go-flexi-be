@@ -250,13 +250,16 @@ exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
         accountName: result.data.account_name,
         image: newPath.url,
         user: req.user.id,
+        status: 'pending'
       });
 
       await corporateBiz.save();
 
       const updatedUser = await User.findByIdAndUpdate(
         req.user.id,
-        { corporateBiz: corporateBiz._id },
+        { corporateBiz: corporateBiz._id,
+          isKYC: 'pending'
+         },
         { new: true } // returns the updated user
       ).populate("corporateBiz");
 

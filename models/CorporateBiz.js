@@ -9,6 +9,11 @@ const corporateBiz = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
+  },
+  status: {
+    type: String,
+    enum: ['unverified', 'pending', 'verified'],
+    default: 'unverified'
   }
 }, { timestamps: true })
 
