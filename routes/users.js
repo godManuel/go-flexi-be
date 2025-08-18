@@ -21,7 +21,7 @@ const router = express.Router();
 
 router.get("/:id", protect, getUser);
 router.get("/", protect, authorize("admin"), getAllUsers);
-router.get("/user", protect, authorize("admin"), getUserByEmail);
+router.post("/user", protect, authorize("admin"), getUserByEmail);
 router.put("/credit-balance", protect, authorize("admin"), creditUserBalance);
 router.put("/debit-balance", protect, authorize("admin"), debitUserBalance);
 router.post("/create-admin", createAdmin);
