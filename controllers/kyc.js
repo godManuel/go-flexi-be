@@ -204,12 +204,10 @@ exports.verifyCac = asyncHandler(async (req, res, next) => {
 });
 
 exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
-  // Ensure file was uploaded
   if (!req.file) {
     return next(new ErrorResponse("No file uploaded", 400));
   }
-
-  // Build relative and absolute paths
+  
   const filePath = `/uploads/${req.file.filename}`; // stored path for DB
   const absolutePath = path.join(__dirname, "..", "uploads", req.file.filename);
 
