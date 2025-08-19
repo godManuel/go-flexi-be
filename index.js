@@ -37,6 +37,7 @@ app.use(cors());
 // Express middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use("/uploads", express.static("uploads"))
 
 // Set security headers
 app.use(helmet());

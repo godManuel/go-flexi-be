@@ -9,6 +9,7 @@ const User = require("../models/User");
 const ErrorResponse = require("../utils/errorResponse");
 const cloudinary = require("../utils/cloudinary.js");
 const fs = require("fs");
+const path = require("path")
 // const axios = require("axios");
 const { bankCodes } = require("../config/bankCodes.js");
 const { getReceiverAcctName } = require("../services/stroWalletService.js");
@@ -203,14 +204,16 @@ exports.verifyCac = asyncHandler(async (req, res, next) => {
 });
 
 exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
-  const uploader = async (path) =>
-    await cloudinary.uploads(path, "rulsar");
+  // Ensure file was uploaded
+  if (!req.file) {
+    return next(new ErrorResponse("No file uploaded", 400));
+  }
 
-  const { path } = req.file;
-  const newPath = await uploader(path);
-  fs.unlinkSync(path);
+  // Build relative and absolute paths
+  const filePath = `/uploads/${req.file.filename}`; // stored path for DB
+  const absolutePath = path.join(__dirname, "..", "uploads", req.file.filename);
 
-  const user = await User.findById({ _id: req.user.id });
+  const user = await User.findById(req.user.id);
   if (!user) {
     return next(new ErrorResponse("User not found", 404));
   }
@@ -221,11 +224,13 @@ exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
     (bank) =>
       bank.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim()
   );
+
   if (!matchedBank) {
     return res
       .status(400)
       .json({ error: `Unsupported bank name: ${bank_name}` });
   }
+
   const bank_code = matchedBank.bankCode;
 
   try {
@@ -235,10 +240,12 @@ exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
     });
 
     if (result) {
+      // (Optional) validate account name with business name
       // if (result.data.account_name !== business_name) {
       //   return next(
       //     new ErrorResponse(
-      //       "Not business account! Provide the account for your business", 400
+      //       "Not business account! Provide the account for your business",
+      //       400
       //     )
       //   );
       // }
@@ -248,18 +255,19 @@ exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
         accountNumber: account_number,
         bankName: bank_name,
         accountName: result.data.account_name,
-        image: newPath.url,
+        image: filePath, // Save relative file path instead of Cloudinary URL
         user: req.user.id,
-        status: 'pending'
+        status: "pending",
       });
 
       await corporateBiz.save();
 
       const updatedUser = await User.findByIdAndUpdate(
         req.user.id,
-        { corporateBiz: corporateBiz._id,
-          isKYC: 'pending'
-         },
+        {
+          corporateBiz: corporateBiz._id,
+          isKYC: "pending",
+        },
         { new: true } // returns the updated user
       ).populate("corporateBiz");
 
