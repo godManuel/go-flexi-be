@@ -9,7 +9,7 @@ const User = require("../models/User");
 const ErrorResponse = require("../utils/errorResponse");
 const cloudinary = require("../utils/cloudinary.js");
 const fs = require("fs");
-const path = require("path")
+const path = require("path");
 // const axios = require("axios");
 const { bankCodes } = require("../config/bankCodes.js");
 const { getReceiverAcctName } = require("../services/stroWalletService.js");
@@ -60,6 +60,10 @@ exports.confirmBvn = asyncHandler(async (req, res, next) => {
       return next(new ErrorResponse("Insufficient Funds", 400));
     }
 
+    if (user.accountBalance - 1000 < 5000) {
+      return next(new ErrorResponse("Insufficient Funds after deduction", 400));
+    }
+
     if (result) {
       const savedUser = await User.findByIdAndUpdate(
         req.user.id,
@@ -99,6 +103,10 @@ exports.verifyNin = asyncHandler(async (req, res, next) => {
 
     if (user.accountBalance < 5000) {
       return next(new ErrorResponse("Insufficient Funds", 400));
+    }
+
+    if (user.accountBalance - 1000 < 5000) {
+      return next(new ErrorResponse("Insufficient Funds after deduction", 400));
     }
 
     const result = await verifyNIN({
@@ -161,6 +169,10 @@ exports.verifyCac = asyncHandler(async (req, res, next) => {
       return next(new ErrorResponse("Insufficient Funds", 400));
     }
 
+    if (user.accountBalance - 5500 < 5000) {
+      return next(new ErrorResponse("Insufficient Funds after deduction", 400));
+    }
+
     const result = await verifyCAC({
       rc_number,
       company_type,
@@ -183,6 +195,7 @@ exports.verifyCac = asyncHandler(async (req, res, next) => {
           cacVerified: true,
           isKYC: "verified",
           tier: "business",
+          $inc: { accountBalance: -5500 },
         },
         { new: true }
       );
@@ -207,13 +220,21 @@ exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
   if (!req.file) {
     return next(new ErrorResponse("No file uploaded", 400));
   }
-  
+
   const filePath = `/uploads/${req.file.filename}`; // stored path for DB
   const absolutePath = path.join(__dirname, "..", "uploads", req.file.filename);
 
   const user = await User.findById(req.user.id);
   if (!user) {
     return next(new ErrorResponse("User not found", 404));
+  }
+
+  if (user.accountBalance < 5000) {
+    return next(new ErrorResponse("Insufficient Funds", 400));
+  }
+
+  if (user.accountBalance - 5500 < 5000) {
+    return next(new ErrorResponse("Insufficient Funds after deduction", 400));
   }
 
   const { business_name, account_number, bank_name } = req.body;
@@ -265,6 +286,7 @@ exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
         {
           corporateBiz: corporateBiz._id,
           isKYC: "pending",
+          $inc: { accountBalance: -5500 },
         },
         { new: true } // returns the updated user
       ).populate("corporateBiz");
