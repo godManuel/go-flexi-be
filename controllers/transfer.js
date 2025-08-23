@@ -50,7 +50,7 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
     const transferFee = Number(process.env.TRANSFER_FEE);
     const totalRequired = transferAmount + transferFee;
 
-    if (user.accountBalance < 5000) {
+    if (user.accountBalance <= 5000) {
       return res.status(400).json({ error: "Insufficient Funds" });
     }
 
@@ -58,7 +58,7 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
       return res.status(400).json({ error: "Insufficient funds" });
     }
 
-    if (user.isKYC !== "verified" && user.tier === "business") {
+    if (user.isKYC !== "verified" && user.tier === "individual") {
       return res.status(403).json({ error: "KYC verification required" });
     }
 
@@ -78,7 +78,7 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
       user: req.user.id,
     });
 
-    await transfer.save()
+    await transfer.save();
 
     // Deduct totalRequired from user's accountBalance
     user.accountBalance -= totalRequired;

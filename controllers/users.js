@@ -6,15 +6,15 @@ const { sendEmail } = require("../utils/sendEmail");
 const { calcNetAmount } = require("../utils/calcNetAmount");
 const { getReceiverAcctName } = require("../services/stroWalletService.js");
 const { bankCodes } = require("../config/bankCodes.js");
-// const axios = require("axios");
+const CorporateBiz = require("../models/CorporateBiz.js");
 
 exports.getUser = asyncHandler(async (req, res, next) => {
   const userId = req.params.id;
   const loggedInUserId = req.user.id; // Assuming req.user is set by authentication middleware
 
-  if (userId !== loggedInUserId) {
-    return next(new ErrorResponse("Unauthorized access", 403));
-  }
+  // if (userId !== loggedInUserId) {
+  //   return next(new ErrorResponse("Unauthorized access", 403));
+  // }
 
   const user = await User.findById(userId).select("-password");
   if (!user) {
