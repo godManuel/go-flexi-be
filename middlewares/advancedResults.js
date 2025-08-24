@@ -10,7 +10,7 @@ const advancedResults = (model, populate) => async (req, res, next) => {
   //   Removing fields from reqQuery
   removeFields.forEach((param) => delete reqQuery[param]);
 
-  let queryStr = JSON.stringify(req.query);
+  let queryStr = JSON.stringify(reqQuery);
 
   queryStr = queryStr.replace(
     /\b(gt|gte|lt|lte|in)\b/g,
