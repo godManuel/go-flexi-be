@@ -16,12 +16,20 @@ const {
   getUserByEmail,
 } = require("../controllers/users");
 const { protect, authorize } = require("../middlewares/auth");
+const User = require("../models/User");
+const advancedResults = require("../middlewares/advancedResults");
 
 const router = express.Router();
 
 // Users endpoints (router 1 & 2: users, router 3: admin)
 router.get("/:id", protect, getUser);
-router.get("/", protect, authorize("admin"), getAllUsers);
+router.get(
+  "/",
+  protect,
+  authorize("admin"),
+  advancedResults(User),
+  getAllUsers
+);
 router.post("/user", protect, authorize("admin"), getUserByEmail);
 
 // Update Balance endpoints (All routers are admin only)

@@ -29,15 +29,7 @@ exports.getUser = asyncHandler(async (req, res, next) => {
 
 // Get all users only for admin
 exports.getAllUsers = asyncHandler(async (req, res, next) => {
-  const users = await User.find().select("-password");
-  if (!users || users.length === 0) {
-    return next(new ErrorResponse("No users found", 404));
-  }
-
-  res.status(200).json({
-    success: true,
-    users,
-  });
+  res.status(200).json(res.advancedResults);
 });
 
 exports.getUserByEmail = asyncHandler(async (req, res, next) => {
