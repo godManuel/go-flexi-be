@@ -6,13 +6,16 @@ exports.sendEmail = async (to, subject, template, context) => {
 
   const transporter = nodemailer.createTransport({
     host: "mail.rulsar.com",
-    port: 465, // SSL port
-    secure: true, // true because 465 uses SSL
+    port: 587,
+    secure: false,
     auth: {
       user: process.env.AUTH_EMAIL,
       pass: process.env.AUTH_PASS, // your email account password
     },
-    connectionTimeout: 10000, // 10s timeout
+    tls: {
+      rejectUnauthorized: false, // prevents self-signed cert issues
+    },
+    connectionTimeout: 10000,
     socketTimeout: 10000,
   });
 
