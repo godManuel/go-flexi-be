@@ -12,6 +12,7 @@ exports.getCorporateBusinesses = asyncHandler(async (req, res, next) => {
 exports.updateCorporateBusiness = asyncHandler(async (req, res, next) => {
   const corporateBusinessId = req.params.id;
   const { action } = req.body;
+
   if (!action) {
     return next(new ErrorResponse("Action is required", 400));
   }
