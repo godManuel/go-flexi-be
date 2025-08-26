@@ -62,7 +62,7 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
       return next(new ErrorResponse("Insufficient Funds after deduction", 400));
     }
 
-    if (user.isKYC !== "verified" && user.tier === "individual") {
+    if (user.isKYC !== "verified" && user.tier === "business") {
       return res.status(403).json({ error: "KYC verification required" });
     }
 
