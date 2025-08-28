@@ -5,10 +5,12 @@ exports.sendEmail = async (to, subject, template, context) => {
   const hbs = (await import("nodemailer-express-handlebars")).default;
 
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: process.env.BREVO_SMTP_SERVER, // e.g., 'smtp-relay.brevo.com'
+    port: process.env.BREVO_PORT,
+    secure: false,
     auth: {
-      user: process.env.AUTH_EMAIL,
-      pass: process.env.AUTH_PASS, // your email account password
+      user: process.env.BREVO_LOGIN,
+      pass: process.env.BREVO_PASSWORD, // your email account password
     },
   });
 
@@ -30,7 +32,7 @@ exports.sendEmail = async (to, subject, template, context) => {
   );
 
   const mailOptions = {
-    from: `"Rulsar" <${process.env.AUTH_EMAIL}>`,
+    from: '"Rulsar" <hellorulsar@gmail.com>',
     to: to,
     subject: subject,
     template: template,
