@@ -89,17 +89,17 @@ exports.loginUser = asyncHandler(async (req, res, next) => {
   if (!isMatch)
     return next(new ErrorResponse("Email or password incorrect", 401));
 
-  // const token = user.getSignedToken();
+  const token = user.getSignedToken();
 
-  // // await user.save();
+  // await user.save();
 
-  // res.status(200).json({
-  //   success: true,
-  //   data: {
-  //     user,
-  //     token,
-  //   },
-  // });
+  res.status(200).json({
+    success: true,
+    data: {
+      user,
+      token,
+    },
+  });
 
   const emailOTP = await user.getEmailOTP();
   await user.save();
@@ -130,7 +130,6 @@ exports.loginUser = asyncHandler(async (req, res, next) => {
   }
 });
 
-
 // @DESC        Verify User Login via Email OTP
 // @ROUTE       POST  /api/v1/auth/verify-login
 // @ACCESS      Private
@@ -160,7 +159,6 @@ exports.verifyLoginOTP = asyncHandler(async (req, res, next) => {
     },
   });
 });
-
 
 // @DESC        Request Password Reset
 // @ROUTE       POST  /api/v1/auth/request-password-reset

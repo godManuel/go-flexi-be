@@ -1,12 +1,13 @@
 // Require express and the User model
 const User = require("../models/User");
+const Deposit = require("../models/Deposit");
+const Transfer = require("../models/Transfer");
 const asyncHandler = require("../middlewares/async");
 const ErrorResponse = require("../utils/errorResponse");
 const { sendEmail } = require("../utils/sendEmail");
 const { calcNetAmount } = require("../utils/calcNetAmount");
 const { getReceiverAcctName } = require("../services/stroWalletService.js");
 const { bankCodes } = require("../config/bankCodes.js");
-const CorporateBiz = require("../models/CorporateBiz.js");
 
 exports.getUser = asyncHandler(async (req, res, next) => {
   const userId = req.params.id;
@@ -168,22 +169,41 @@ exports.createAdmin = asyncHandler(async (req, res, next) => {
 
 // Get transactions for a user
 exports.getUserTransactions = asyncHandler(async (req, res, next) => {
-  const userId = req.params.id;
-  const loggedInUserId = req.user.id; // Assuming req.user is set by authentication middleware
+  const { userId } = req.params;
 
-  if (userId !== loggedInUserId) {
-    return next(new ErrorResponse("Unauthorized access", 403));
-  }
+  const user = await User.findById(userId);
+  if (!user) return res.status(404).json({ message: "User not found" });
 
-  const user = await User.findById(userId).populate("transactions");
-  if (!user) {
-    return next(new ErrorResponse("User not found", 404));
-  }
+  const deposits = await Deposit.find({ userId }).lean();
+  const transfers = await Transfer.find({ userId }).lean();
 
-  res.status(200).json({
-    success: true,
-    transactions: user.transactions,
+  // Format deposits with fee calculation
+  const formattedDeposits = deposits.map((d) => {
+    const { netAmount, totalFee } = calcNetAmount(d.amount); // use your fee function
+
+    return {
+      _id: d._id,
+      type: "deposit",
+      grossAmount: d.amount, // original amount (optional)
+      netAmount, // actual settled amount after fees
+      feeCharged: totalFee, // app fee
+      createdAt: d.createdAt,
+    };
   });
+
+  const formattedTransfers = transfers.map((t) => ({
+    _id: t._id,
+    type: "transfer",
+    amount: t.amount,
+    to: t.to,
+    createdAt: t.createdAt,
+  }));
+
+  const transactions = [...formattedDeposits, ...formattedTransfers].sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+  );
+
+  res.json({ user, transactions });
 });
 
 // Get all users transactions for admin
