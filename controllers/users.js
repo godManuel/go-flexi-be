@@ -174,8 +174,8 @@ exports.getUserTransactions = asyncHandler(async (req, res, next) => {
   const user = await User.findById(userId);
   if (!user) return res.status(404).json({ message: "User not found" });
 
-  const deposits = await Deposit.find({ userId }).lean();
-  const transfers = await Transfer.find({ userId }).lean();
+  const deposits = await Deposit.find({ user: userId }).lean();
+  const transfers = await Transfer.find({ user: userId }).lean();
 
   // Format deposits with fee calculation
   const formattedDeposits = deposits.map((d) => {
@@ -184,9 +184,9 @@ exports.getUserTransactions = asyncHandler(async (req, res, next) => {
     return {
       _id: d._id,
       type: "deposit",
-      grossAmount: d.amount, // original amount (optional)
-      netAmount, // actual settled amount after fees
-      feeCharged: totalFee, // app fee
+      grossAmount: d.amount,
+      netAmount,
+      feeCharged: totalFee,
       createdAt: d.createdAt,
     };
   });

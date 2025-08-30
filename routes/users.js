@@ -26,7 +26,7 @@ router.get("/:id", protect, getUser);
 router.get(
   "/",
   protect,
-  authorize("admin"),
+  // authorize("admin"),
   advancedResults(User),
   getAllUsers
 );
@@ -40,13 +40,8 @@ router.put("/debit-balance", protect, authorize("admin"), debitUserBalance);
 router.post("/create-admin", createAdmin);
 
 // Transactions endpoints (router 1: user, router 2: admin)
-router.get("/:id/transactions", protect, getUserTransactions);
-router.get(
-  "/transactions",
-  protect,
-  authorize("admin"),
-  getAllUserTransactions
-);
+router.get("/:userId/transactions", protect, getUserTransactions);
+router.get("/transactions", protect, getAllUserTransactions);
 
 // Notification endpoints (All routers are admin only)
 router.post(
