@@ -179,7 +179,7 @@ exports.getUserTransactions = asyncHandler(async (req, res, next) => {
 
   // Format deposits with fee calculation
   const formattedDeposits = deposits.map((d) => {
-    const { netAmount, totalFee } = calcNetAmount(d.amount); // use your fee function
+    const { netAmount, totalFee } = calcNetAmount(d.settledAmount); // use your fee function
 
     return {
       _id: d._id,
