@@ -368,6 +368,44 @@ exports.addBeneficiary = asyncHandler(async (req, res, next) => {
   });
 });
 
+exports.blockUser = asyncHandler(async (req, res, next) => {
+  const userId = req.params.id;
+
+  let user = await User.findById(userId);
+  if (!user) return next(new ErrorResponse("User not found", 404));
+
+  user = await User.findByIdAndUpdate(
+    userId,
+    {
+      $set: {
+        isBlocked: true,
+      },
+    },
+    { new: true }
+  );
+
+  res.json({ success: true, message: "User blocked successfully", user });
+});
+
+exports.unblockUser = asyncHandler(async (req, res, next) => {
+  const userId = req.params.id;
+
+  let user = await User.findById(userId);
+  if (!user) return next(new ErrorResponse("User not found", 404));
+
+  user = await User.findByIdAndUpdate(
+    userId,
+    {
+      $set: {
+        isBlocked: false,
+      },
+    },
+    { new: true }
+  );
+
+  res.json({ success: true, message: "User unblocked successfully", user });
+});
+
 // const processUser = async (user) => {
 //   try {
 //     const users = await User.find({ bankName: "PAGA" });

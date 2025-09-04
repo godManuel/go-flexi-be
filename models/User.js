@@ -103,7 +103,7 @@ const userSchema = new mongoose.Schema(
     },
     corporateBiz: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'CorporateBiz'
+      ref: "CorporateBiz",
     },
     dailyTransferLimit: { type: Number, default: 0 },
     monthlyTransferLimit: { type: Number, default: 0 },
@@ -114,6 +114,11 @@ const userSchema = new mongoose.Schema(
 
     dailyTransferAmount: { type: Number, default: 0 },
     monthlyTransferAmount: { type: Number, default: 0 },
+
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

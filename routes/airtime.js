@@ -1,8 +1,9 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { protect, authorize } = require('../middlewares/auth');
-const { buyAirtime } = require('../controllers/airtime');
+const { checkBlocked } = require("../middlewares/checkBlock");
+const { protect, authorize } = require("../middlewares/auth");
+const { buyAirtime } = require("../controllers/airtime");
 
-router.post("/purchase", protect, authorize('user'), buyAirtime)
+router.post("/purchase", protect, checkBlocked, authorize("user"), buyAirtime);
 
 module.exports = router;

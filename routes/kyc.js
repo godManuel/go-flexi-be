@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const { checkBlocked } = require("../middlewares/checkBlock");
 const { protect, authorize } = require("../middlewares/auth");
 const {
   verifyBvn,
@@ -10,10 +11,16 @@ const {
 } = require("../controllers/kyc");
 const upload = require("../utils/multer");
 
-router.post("/verify-bvn", protect, authorize("user"), verifyBvn);
-router.post("/confirm-bvn", protect, authorize("user"), confirmBvn);
-router.post("/verify-nin", protect, authorize("user"), verifyNin);
-router.post("/verify-cac", protect, authorize("user"), verifyCac);
+router.post("/verify-bvn", protect, checkBlocked, authorize("user"), verifyBvn);
+router.post(
+  "/confirm-bvn",
+  protect,
+  checkBlocked,
+  authorize("user"),
+  confirmBvn
+);
+router.post("/verify-nin", protect, checkBlocked, authorize("user"), verifyNin);
+router.post("/verify-cac", protect, checkBlocked, authorize("user"), verifyCac);
 router.post(
   "/verify-corporate-business",
   protect,

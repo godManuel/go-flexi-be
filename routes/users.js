@@ -22,11 +22,11 @@ const advancedResults = require("../middlewares/advancedResults");
 const router = express.Router();
 
 // Users endpoints (router 1 & 2: users, router 3: admin)
-router.get("/:id", protect, getUser);
+router.get("/:id", protect, checkBlocked, getUser);
 router.get(
   "/",
   protect,
-  // authorize("admin"),
+  authorize("admin"),
   advancedResults(User),
   getAllUsers
 );
