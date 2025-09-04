@@ -14,7 +14,10 @@ const {
   getNetAmount,
   addBeneficiary,
   getUserByEmail,
+  blockUser,
+  unblockUser,
 } = require("../controllers/users");
+const { checkBlocked } = require("../middlewares/checkBlock");
 const { protect, authorize } = require("../middlewares/auth");
 const User = require("../models/User");
 const advancedResults = require("../middlewares/advancedResults");
@@ -55,6 +58,10 @@ router.post("/notify", sendNotificationToUser);
 
 // Beneficiary endpoint (User only)
 router.post("/add-beneficiary", protect, authorize("user"), addBeneficiary);
+
+router.put("/:id/block", protect, authorize("admin"), blockUser);
+
+router.put("/:id/unblock", protect, authorize("admin"), unblockUser);
 
 // router.post("/get-net-amount", getNetAmount);
 // router.post("/process-batches", processInBatches);
