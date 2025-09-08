@@ -33,7 +33,19 @@ exports.updateCorporateBusiness = asyncHandler(async (req, res, next) => {
 
   // Notify user
   const user = await User.findById(corporateBusiness.userId);
+  if (!user) return next(new ErrorResponse("User not found!"));
+
   if (user) {
+    await User.findByIdAndUpdate(
+      corporateBusiness.userId,
+      {
+        $set: {
+          isKYC: "verified",
+        },
+      },
+      { new: true }
+    );
+
     await sendEmail(
       user.email,
       `Corporate Business Form ${
