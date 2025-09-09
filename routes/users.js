@@ -30,7 +30,7 @@ router.get(
   "/",
   protect,
   authorize("admin"),
-  advancedResults(User),
+  advancedResults(User, { path: "corporateBiz" }),
   getAllUsers
 );
 router.post("/user", protect, authorize("admin"), getUserByEmail);
