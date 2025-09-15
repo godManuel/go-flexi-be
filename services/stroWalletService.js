@@ -71,6 +71,7 @@ exports.confirmBVN = async ({ trx, otp, mode }) => {
         public_key: STRO_PUB_KEY,
         trx,
         otp,
+        mode,
       },
     }
   );
