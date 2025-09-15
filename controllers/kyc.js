@@ -47,9 +47,9 @@ exports.verifyBvn = asyncHandler(async (req, res, next) => {
 
 exports.confirmBvn = asyncHandler(async (req, res, next) => {
   try {
-    const { trx, otp, mode } = req.query;
+    const { trx, mode } = req.query;
 
-    const result = await confirmBVN({ trx, otp, mode });
+    const result = await confirmBVN({ trx, mode });
 
     const user = await User.findById({ _id: req.user.id });
     if (!user) {
