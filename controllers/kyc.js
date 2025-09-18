@@ -123,6 +123,8 @@ exports.verifyNin = asyncHandler(async (req, res, next) => {
         req.user.id,
         {
           ninVerified: true,
+          isKYC: "verified",
+          tier: "business",
           $inc: { accountBalance: -1000 },
         },
         { new: true }
@@ -193,8 +195,8 @@ exports.verifyCac = asyncHandler(async (req, res, next) => {
         req.user.id,
         {
           cacVerified: true,
-          isKYC: "verified",
-          tier: "business",
+          // isKYC: "verified",
+          tier: "merchant",
           $inc: { accountBalance: -5500 },
         },
         { new: true }
