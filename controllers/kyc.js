@@ -191,12 +191,22 @@ exports.verifyCac = asyncHandler(async (req, res, next) => {
 
     // Optionally update user NIN status here
     if (result) {
+      let uniqueCode;
+      let codeExists = true;
+
+      do {
+        uniqueCode = Math.floor(1000 + Math.random() * 9000);
+        codeExists = await User.exists({
+          merchantVerificationCode: uniqueCode,
+        });
+      } while (codeExists);
+
       const savedUser = await User.findByIdAndUpdate(
         req.user.id,
         {
           cacVerified: true,
-          // isKYC: "verified",
           tier: "merchant",
+          merchantVerificationCode: uniqueCode,
           $inc: { accountBalance: -5500 },
         },
         { new: true }

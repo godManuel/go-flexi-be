@@ -115,6 +115,8 @@ const userSchema = new mongoose.Schema(
     dailyTransferAmount: { type: Number, default: 0 },
     monthlyTransferAmount: { type: Number, default: 0 },
 
+    merchantVerificationCode: String,
+
     isBlocked: {
       type: Boolean,
       default: false,
