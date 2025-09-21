@@ -33,8 +33,10 @@ exports.enforceTransferLimits = async (userId, transferAmount) => {
   // ===== BUSINESS TIER =====
   if (user.tier === "business") {
     // Defaults
-    if (!user.dailyTransferLimit) user.dailyTransferLimit = 50000;
-    if (!user.monthlyTransferLimit) user.monthlyTransferLimit = 250000;
+    if (!user.dailyTransferLimit || user.dailyTransferLimit)
+      user.dailyTransferLimit = 50000;
+    if (!user.monthlyTransferLimit || user.monthlyTransferLimit)
+      user.monthlyTransferLimit = 250000;
 
     // 5-hour gap rule
     if (
@@ -70,7 +72,10 @@ exports.enforceTransferLimits = async (userId, transferAmount) => {
   // ===== MERCHANT TIER =====
   if (user.tier === "merchant") {
     // Defaults
-    if (user.monthlyTransferLimit) user.monthlyTransferLimit = 500000;
+    if (!user.dailyTransferLimit || user.dailyTransferLimit)
+      user.dailyTransferLimit = 0;
+    if (!user.monthlyTransferLimit || user.monthlyTransferLimit)
+      user.monthlyTransferLimit = 500000;
 
     // Per-transfer rule
     if (transferAmount > 10000) {
