@@ -195,7 +195,7 @@ exports.verifyCac = asyncHandler(async (req, res, next) => {
       let codeExists = true;
 
       do {
-        uniqueCode = Math.floor(1000 + Math.random() * 9000);
+        uniqueCode = Math.floor(1000000 + Math.random() * 9000000);
         codeExists = await User.exists({
           merchantVerificationCode: uniqueCode,
         });
