@@ -56,7 +56,7 @@ exports.verifyBVN = async ({
 };
 
 // Confirm BVN
-exports.confirmBVN = async ({ trx, mode }) => {
+exports.confirmBVN = async ({ trx, mode, otp }) => {
   const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
   const url = "https://strowallet.com/api/kyc_bvnotp/";
 
