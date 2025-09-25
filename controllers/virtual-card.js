@@ -115,6 +115,7 @@ exports.createCardCustomer = asyncHandler(async (req, res, next) => {
       city,
       country,
       idType: user.idCardType,
+      idNumber: user.idNumber,
     });
 
     res.json({ success: true, data: result });
@@ -140,19 +141,7 @@ exports.createVUSDCard = asyncHandler(async (req, res, next) => {
       return next(new ErrorResponse("Failed to retrieve exchange rate", 500));
     }
 
-    let exchangeRateValue = Math.floor(exchangeResp.rate); // Convert to integer
-
-    const serviceFeePerDollar = 2.5;
-    const totalRate = exchangeRateValue + serviceFeePerDollar;
-    console.log(
-      "Exchange Rate (int):",
-      exchangeRateValue,
-      "Service Fee per $:",
-      serviceFeePerDollar,
-      "Total Rate:",
-      totalRate
-    );
-
+    const exchangeRateValue = Math.floor(exchangeResp.rate); // Convert to integer
     const { card_type, amount, mode } = req.body;
 
     const user = await User.findById(req.user.id);
@@ -160,19 +149,36 @@ exports.createVUSDCard = asyncHandler(async (req, res, next) => {
       return next(new ErrorResponse("User not found", 404));
     }
 
-    const amountInNaira = amount * totalRate;
-    console.log("Amount in Naira (with service fee):", amountInNaira);
+    // --- Service Charges ---
+    const serviceFeeDollar = process.env.SERVICE_CHARGE_USD; // Flat $3 charge
+    const serviceFeeDollarInNaira = serviceFeeDollar * exchangeRateValue;
 
+    const percentFee = process.env.PERCENT_FEE_USD; // 2%
+    const percentFeeInNaira = amount * percentFee * exchangeRateValue;
+
+    // --- Main Funding Amount ---
+    const amountInNaira = amount * exchangeRateValue;
+
+    // --- Total Deduction ---
+    const totalDeduction =
+      amountInNaira + serviceFeeDollarInNaira + percentFeeInNaira;
+
+    console.log("Exchange Rate:", exchangeRateValue);
+    console.log("Funding Amount in Naira:", amountInNaira);
+    console.log("Service Fee ($3) in Naira:", serviceFeeDollarInNaira);
+    console.log("2% Fee in Naira:", percentFeeInNaira);
+    console.log("Total Deduction in Naira:", totalDeduction);
+
+    // --- Validation ---
     if (user.isKYC !== "verified") {
       return res.status(403).json({ error: "KYC verification required" });
     }
 
-    if (user.accountBalance < amountInNaira) {
+    if (user.accountBalance < totalDeduction) {
       return next(new ErrorResponse("Insufficient funds", 400));
     }
 
-    // Ensure minimum balance of 5000 after deduction
-    if (user.accountBalance - amountInNaira < 5000) {
+    if (user.accountBalance - totalDeduction < 5000) {
       return next(
         new ErrorResponse(
           "Insufficient funds: minimum balance of 5000 required after transaction",
@@ -181,6 +187,7 @@ exports.createVUSDCard = asyncHandler(async (req, res, next) => {
       );
     }
 
+    // --- Create Virtual Card ---
     const result = await createVirtualUSDCard({
       name_on_card: user.fullName,
       card_type,
@@ -189,10 +196,8 @@ exports.createVUSDCard = asyncHandler(async (req, res, next) => {
       mode,
     });
 
-    console.log(result);
-
     if (result) {
-      user.accountBalance -= amountInNaira; // Deduct based on exchange rate
+      user.accountBalance -= totalDeduction; // Deduct full cost in Naira
       user.vusd_card = result.response.card_id;
       const savedUser = await user.save();
 

@@ -31,7 +31,8 @@ router.post(
   "/create-card-customer",
   protect,
   checkBlocked,
-  authorize("user), createCardCustomer")
+  authorize("user"),
+  createCardCustomer
 );
 
 router.post(
