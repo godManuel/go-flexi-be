@@ -60,6 +60,7 @@ exports.uploadCustomerImages = asyncHandler(async (req, res, next) => {
     user.id,
     {
       idCardType: req.body.idCardType,
+      idNumber: req.body.idNumber,
       ...(profileImageUrl && { profileImage: profileImageUrl }),
       ...(idCardUrl && { idCard: idCardUrl }),
     },
@@ -140,7 +141,8 @@ exports.createVUSDCard = asyncHandler(async (req, res, next) => {
     }
 
     let exchangeRateValue = Math.floor(exchangeResp.rate); // Convert to integer
-    const serviceFeePerDollar = 100;
+
+    const serviceFeePerDollar = 2.5;
     const totalRate = exchangeRateValue + serviceFeePerDollar;
     console.log(
       "Exchange Rate (int):",

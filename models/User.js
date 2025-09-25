@@ -124,6 +124,7 @@ const userSchema = new mongoose.Schema(
     profileImage: String,
     idCard: String,
     idCardType: String,
+    idNumber: String,
   },
   { timestamps: true }
 );
