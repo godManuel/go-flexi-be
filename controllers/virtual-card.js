@@ -9,6 +9,68 @@ const {
 } = require("../services/stroWalletService");
 const asyncHandler = require("../middlewares/async");
 const ErrorResponse = require("../utils/errorResponse");
+const path = require("path");
+const fs = require("fs");
+
+exports.uploadCustomerImages = asyncHandler(async (req, res, next) => {
+  const files = req.files;
+
+  if (!files || (!files.image && !files.idCard)) {
+    return res.status(400).json({ error: "No files uploaded" });
+  }
+
+  const uploadDir = path.join(__dirname, "../uploads/");
+
+  // make sure folder exists
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+
+  let profileImageUrl, idCardUrl;
+
+  // handle profile image upload
+  if (files.image && files.image[0]) {
+    const imageFile = files.image[0];
+    const imageName = Date.now() + "-" + imageFile.originalname;
+    const imagePath = path.join(uploadDir, imageName);
+
+    fs.renameSync(imageFile.path, imagePath);
+
+    profileImageUrl = `/uploads/${imageName}`;
+  }
+
+  // handle ID card upload
+  if (files.idCard && files.idCard[0]) {
+    const idFile = files.idCard[0];
+    const idName = Date.now() + "-" + idFile.originalname;
+    const idPath = path.join(uploadDir, idName);
+
+    fs.renameSync(idFile.path, idPath);
+
+    idCardUrl = `/uploads/${idName}`;
+  }
+
+  let user = await User.findById(req.user.id);
+  if (!user) {
+    return next(new ErrorResponse("User not found", 404));
+  }
+
+  // update servant record with fixed fields
+  user = await User.findByIdAndUpdate(
+    user.id,
+    {
+      ...(profileImageUrl && { profileImage: profileImageUrl }),
+      ...(idCardUrl && { idCard: idCardUrl }),
+    },
+    { new: true, runValidators: true }
+  ).lean();
+
+  res.status(200).json({
+    success: true,
+    message: "Customer image & idCard uploaded!",
+    data: user,
+  });
+});
 
 // Function to create card customer
 exports.createCardCustomer = asyncHandler(async (req, res, next) => {
@@ -43,8 +105,8 @@ exports.createCardCustomer = asyncHandler(async (req, res, next) => {
       customerEmail: user.email,
       phoneNumber: user.phoneNumber,
       dateOfBirth,
-      idImage,
-      userPhoto,
+      idImage: user.idCard,
+      userPhoto: user.profileImage,
       line1,
       state,
       zipcode,
@@ -53,9 +115,7 @@ exports.createCardCustomer = asyncHandler(async (req, res, next) => {
       idType,
     });
 
-    if (result) {
-      res.json({ success: true, data: result });
-    }
+    res.json({ success: true, data: result });
   } catch (error) {
     if (error.response && error.response.data) {
       console.error(error.response?.data || error.message);

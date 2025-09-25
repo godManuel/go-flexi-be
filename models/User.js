@@ -121,6 +121,8 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    profileImage: String,
+    idCard: String,
   },
   { timestamps: true }
 );
