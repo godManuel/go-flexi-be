@@ -6,6 +6,7 @@ const {
   withdrawFromVirtualUSDCard,
   getCardTransactions,
   getCardDetails,
+  createCardCustomer,
 } = require("../services/stroWalletService");
 const asyncHandler = require("../middlewares/async");
 const ErrorResponse = require("../utils/errorResponse");
@@ -99,7 +100,7 @@ exports.createCardCustomer = asyncHandler(async (req, res, next) => {
       idType,
     } = req.query;
 
-    const result = await confirmBVN({
+    const result = await createCardCustomer({
       houseNumber,
       firstName,
       lastName,
