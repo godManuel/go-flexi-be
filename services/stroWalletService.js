@@ -577,6 +577,8 @@ exports.createCardCustomer = async ({
   userPhoto,
   line1,
   state,
+  zipCode,
+  city,
   country,
   idType,
 }) => {
@@ -603,6 +605,8 @@ exports.createCardCustomer = async ({
         userPhoto,
         line1,
         state,
+        zipCode,
+        city,
         country,
         idType,
       },
