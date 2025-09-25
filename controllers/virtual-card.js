@@ -113,7 +113,7 @@ exports.createCardCustomer = asyncHandler(async (req, res, next) => {
       zipcode,
       city,
       country,
-      idType,
+      idType: user.idCardType,
     });
 
     res.json({ success: true, data: result });
