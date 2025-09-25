@@ -59,6 +59,7 @@ exports.uploadCustomerImages = asyncHandler(async (req, res, next) => {
   user = await User.findByIdAndUpdate(
     user.id,
     {
+      idCardType: req.body.idCardType,
       ...(profileImageUrl && { profileImage: profileImageUrl }),
       ...(idCardUrl && { idCard: idCardUrl }),
     },
