@@ -6,11 +6,19 @@ const {
   withdrawFromVUSDCard,
   cardTransactions,
   cardDetails,
+  createCardCustomer,
 } = require("../controllers/virtual-card");
 const { checkBlocked } = require("../middlewares/checkBlock");
 const { protect, authorize } = require("../middlewares/auth");
 
 const router = express.Router();
+
+router.post(
+  "/create-card-customer",
+  protect,
+  checkBlocked,
+  authorize("user), createCardCustomer")
+);
 
 router.post(
   "/create-usd",

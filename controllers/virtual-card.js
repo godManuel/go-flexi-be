@@ -5,10 +5,70 @@ const {
   fundVirtualUSDCard,
   withdrawFromVirtualUSDCard,
   getCardTransactions,
-  getCardDetails 
+  getCardDetails,
 } = require("../services/stroWalletService");
 const asyncHandler = require("../middlewares/async");
 const ErrorResponse = require("../utils/errorResponse");
+
+// Function to create card customer
+exports.createCardCustomer = asyncHandler(async (req, res, next) => {
+  try {
+    const user = await User.findById({ _id: req.user.id });
+
+    if (!user) {
+      return next(new ErrorResponse("User not found", 404));
+    }
+
+    const {
+      houseNumber,
+      firstName,
+      lastName,
+      idNumber,
+      dateOfBirth,
+      idImage,
+      userPhoto,
+      line1,
+      state,
+      zipcode,
+      city,
+      country,
+      idType,
+    } = req.query;
+
+    const result = await confirmBVN({
+      houseNumber,
+      firstName,
+      lastName,
+      idNumber,
+      customerEmail: user.email,
+      phoneNumber: user.phoneNumber,
+      dateOfBirth,
+      idImage,
+      userPhoto,
+      line1,
+      state,
+      zipcode,
+      city,
+      country,
+      idType,
+    });
+
+    if (result) {
+      res.json({ success: true, data: result });
+    }
+  } catch (error) {
+    if (error.response && error.response.data) {
+      console.error(error.response?.data || error.message);
+      return next(
+        new ErrorResponse(
+          error.response.data.message || "Strowallet BVN confirmation failed",
+          error.response.status || 500
+        )
+      );
+    }
+    return next(new ErrorResponse(error.message || "Server Error", 500));
+  }
+});
 
 // Function to create a virtual USD card
 exports.createVUSDCard = asyncHandler(async (req, res, next) => {

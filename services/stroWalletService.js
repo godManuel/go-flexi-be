@@ -563,3 +563,50 @@ exports.verifyCAC = async ({
 
   return response.data;
 };
+
+// Create Card Customer
+exports.createCardCustomer = async ({
+  houseNumber,
+  firstName,
+  lastName,
+  idNumber,
+  customerEmail,
+  phoneNumber,
+  dateOfBirth,
+  idImage,
+  userPhoto,
+  line1,
+  state,
+  country,
+  idType,
+}) => {
+  const STRO_PUB_KEY = process.env.STROWALLET_PUBLIC_KEY;
+  const url = "https://strowallet.com/api/bitvcard/create-user/";
+
+  const response = await axios.post(
+    url,
+    {},
+    {
+      headers: {
+        accept: "application/json",
+      },
+      params: {
+        public_key: STRO_PUB_KEY,
+        houseNumber,
+        firstName,
+        lastName,
+        idNumber,
+        customerEmail,
+        phoneNumber,
+        dateOfBirth,
+        idImage,
+        userPhoto,
+        line1,
+        state,
+        country,
+        idType,
+      },
+    }
+  );
+  return response.data;
+};
