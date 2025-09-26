@@ -108,15 +108,15 @@ exports.createCardCustomer = asyncHandler(async (req, res, next) => {
       customerEmail: user.email,
       phoneNumber: user.phoneNumber,
       dateOfBirth,
-      idImage: user.idCard,
-      userPhoto: user.profileImage,
+      idImage,
+      userPhoto,
       line1,
       state,
       zipCode,
       city,
       country,
-      idType: user.idCardType,
-      idNumber: user.idNumber,
+      idType,
+      idNumber,
     });
 
     res.json({ success: true, data: result });
