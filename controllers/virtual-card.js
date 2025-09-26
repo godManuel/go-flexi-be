@@ -78,7 +78,7 @@ exports.uploadCustomerImages = asyncHandler(async (req, res, next) => {
 // Function to create card customer
 exports.createCardCustomer = asyncHandler(async (req, res, next) => {
   try {
-    const user = await User.findById({ _id: req.user.id });
+    const user = await User.findById(req.user?.id);
 
     if (!user) {
       return next(new ErrorResponse("User not found", 404));
@@ -100,7 +100,29 @@ exports.createCardCustomer = asyncHandler(async (req, res, next) => {
       idType,
     } = req.query;
 
-    const result = await createCardCustomer({
+    // Basic validation check for required fields
+    const requiredFields = {
+      firstName,
+      lastName,
+      idNumber,
+      dateOfBirth,
+      idImage,
+      userPhoto,
+      line1,
+      city,
+      state,
+      country,
+      zipCode,
+      idType,
+    };
+
+    for (const [key, value] of Object.entries(requiredFields)) {
+      if (!value) {
+        return next(new ErrorResponse(`Missing required field: ${key}`, 400));
+      }
+    }
+
+    const payload = {
       houseNumber,
       firstName,
       lastName,
@@ -116,21 +138,39 @@ exports.createCardCustomer = asyncHandler(async (req, res, next) => {
       city,
       country,
       idType,
-      idNumber,
-    });
+    };
 
-    res.json({ success: true, data: result });
+    const result = await createCardCustomer(payload);
+
+    if (!result) {
+      return next(
+        new ErrorResponse("Card creation failed, no response returned", 502)
+      );
+    }
+
+    res.status(201).json({
+      success: true,
+      message: "Card customer created successfully",
+      data: result,
+    });
   } catch (error) {
-    if (error.response && error.response.data) {
-      console.error(error.response?.data || error.message);
+    console.error(
+      "Card Customer Creation Error:",
+      error.response?.data || error.message
+    );
+
+    if (error.response?.data) {
       return next(
         new ErrorResponse(
-          error.response.data.message || "Strowallet BVN confirmation failed",
-          error.response.status || 500
+          error.response.data.message || "Strowallet Card creation failed",
+          error.response.status || 502
         )
       );
     }
-    return next(new ErrorResponse(error.message || "Server Error", 500));
+
+    return next(
+      new ErrorResponse(error.message || "Internal Server Error", 500)
+    );
   }
 });
 
