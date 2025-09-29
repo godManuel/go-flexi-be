@@ -19,7 +19,7 @@ exports.uploads = (file, folder) => {
     },
     {
       resource_type: "auto",
-      folder: "civil-servants",
+      folder: "go-flexi",
     }
   );
 };

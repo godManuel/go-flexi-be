@@ -10,8 +10,8 @@ const {
 } = require("../services/stroWalletService");
 const asyncHandler = require("../middlewares/async");
 const ErrorResponse = require("../utils/errorResponse");
-const path = require("path");
 const fs = require("fs");
+const cloudinary = require("../utils/cloudinary");
 
 exports.uploadCustomerImages = asyncHandler(async (req, res, next) => {
   const files = req.files;
@@ -20,35 +20,33 @@ exports.uploadCustomerImages = asyncHandler(async (req, res, next) => {
     return res.status(400).json({ error: "No files uploaded" });
   }
 
-  const uploadDir = path.join(__dirname, "../uploads/");
-
-  // make sure folder exists
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
-
   let profileImageUrl, idCardUrl;
 
-  // handle profile image upload
+  // Upload profile image
   if (files.image && files.image[0]) {
     const imageFile = files.image[0];
-    const imageName = Date.now() + "-" + imageFile.originalname;
-    const imagePath = path.join(uploadDir, imageName);
+    const result = await cloudinary.uploads(imageFile.path, {
+      folder: "customer_profiles",
+    });
+    console.log("Cloudinary upload result:", result);
 
-    fs.renameSync(imageFile.path, imagePath);
+    profileImageUrl = result.url;
 
-    profileImageUrl = `/uploads/${imageName}`;
+    // delete temp file
+    fs.unlinkSync(imageFile.path);
   }
 
-  // handle ID card upload
+  // Upload ID card
   if (files.idCard && files.idCard[0]) {
     const idFile = files.idCard[0];
-    const idName = Date.now() + "-" + idFile.originalname;
-    const idPath = path.join(uploadDir, idName);
+    const result = await cloudinary.uploads(idFile.path, {
+      folder: "customer_id_cards",
+    });
 
-    fs.renameSync(idFile.path, idPath);
+    idCardUrl = result.url;
 
-    idCardUrl = `/uploads/${idName}`;
+    // delete temp file
+    fs.unlinkSync(idFile.path);
   }
 
   let user = await User.findById(req.user.id);
@@ -56,7 +54,7 @@ exports.uploadCustomerImages = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse("User not found", 404));
   }
 
-  // update servant record with fixed fields
+  // Update user record
   user = await User.findByIdAndUpdate(
     user.id,
     {
@@ -70,7 +68,7 @@ exports.uploadCustomerImages = asyncHandler(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    message: "Customer image & idCard uploaded!",
+    message: "Customer image & ID card uploaded successfully!",
     data: user,
   });
 });

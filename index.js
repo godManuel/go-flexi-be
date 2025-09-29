@@ -21,6 +21,8 @@ const electricity = require("./routes/electricity");
 const virtualCard = require("./routes/virtual-card");
 const corporateBusiness = require("./routes/corporate-business");
 
+const path = require("path");
+
 // Calling built-in packages
 const errorHandler = require("./middlewares/error");
 const notFound = require("./middlewares/notFound");
@@ -38,7 +40,7 @@ app.use(cors());
 // Express middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Set security headers
 app.use(helmet());
