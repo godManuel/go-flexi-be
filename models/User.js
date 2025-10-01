@@ -125,6 +125,11 @@ const userSchema = new mongoose.Schema(
     idCard: String,
     idCardType: String,
     idNumber: String,
+    usdtAddress: String,
+    usdtBalance: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );

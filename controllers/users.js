@@ -1,23 +1,23 @@
 // Require express and the User model
 const User = require("../models/User");
+const UsdTrx = require("../models/UsdTrx");
 const Deposit = require("../models/Deposit");
 const Transfer = require("../models/Transfer");
 const asyncHandler = require("../middlewares/async");
 const ErrorResponse = require("../utils/errorResponse");
 const { sendEmail } = require("../utils/sendEmail");
 const { calcNetAmount } = require("../utils/calcNetAmount");
-const { getReceiverAcctName } = require("../services/stroWalletService.js");
+const {
+  getReceiverAcctName,
+  createUSDTAddress,
+  sendUSDT,
+  exchangeRate,
+  checkUSDTTransactionStatus,
+} = require("../services/stroWalletService.js");
 const { bankCodes } = require("../config/bankCodes.js");
 
 exports.getUser = asyncHandler(async (req, res, next) => {
-  const userId = req.params.id;
-  const loggedInUserId = req.user.id; // Assuming req.user is set by authentication middleware
-
-  // if (userId !== loggedInUserId) {
-  //   return next(new ErrorResponse("Unauthorized access", 403));
-  // }
-
-  const user = await User.findById(userId).select("-password");
+  const user = await User.findById(req.user.id).select("-password");
   if (!user) {
     return next(new ErrorResponse("User not found", 404));
   }
@@ -405,6 +405,253 @@ exports.unblockUser = asyncHandler(async (req, res, next) => {
 
   res.json({ success: true, message: "User unblocked successfully", user });
 });
+
+exports.createUSDTAddress = asyncHandler(async (req, res, next) => {
+  const userId = req.user.id;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    return next(new ErrorResponse("User not found", 404));
+  }
+
+  const stringedUserId = user._id.toString();
+
+  const lastSixDigits = stringedUserId.slice(-6).padStart(6, "0");
+
+  const userLabel = `${lastSixDigits}_USDT`;
+
+  const { mode } = req.query;
+
+  try {
+    // Call the service function to create a USDT address
+    const addressResult = await createUSDTAddress({
+      label: userLabel,
+      mode,
+      vip_key: process.env.STRO_VIP_KEY,
+      webhook_url: `https://go-flexi-be-zmy7.onrender.com/webhooks/strowallet`,
+    });
+
+    if (!addressResult || !addressResult.address) {
+      return next(new ErrorResponse("Failed to create USDT address", 500));
+    }
+
+    // Save the address to the user document (customize field name as needed)
+    user.usdtAddress = addressResult.address;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "USDT address created successfully",
+      usdtAddress: addressResult.address,
+    });
+  } catch (error) {
+    console.error("Error creating USDT address:", error);
+    return next(new ErrorResponse("Error creating USDT address", 500));
+  }
+});
+
+exports.checkUSDTStatus = asyncHandler(async (req, res, next) => {
+  const { reference } = req.query;
+
+  if (!reference) {
+    return next(new ErrorResponse("Reference is required", 400));
+  }
+
+  try {
+    const result = await checkUSDTTransactionStatus({ reference });
+
+    if (!result) {
+      return next(new ErrorResponse("Failed to check USDT status", 500));
+    }
+
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return next(new ErrorResponse("User not found", 404));
+    }
+
+    console.log("Looking for reference:", reference);
+    const trx = await UsdTrx.findOne({ reference: String(reference) });
+    console.log("Found trx:", trx);
+
+    // Only increment if transaction exists and belongs to the logged-in user
+    if (trx && trx.user.toString() === userId.toString()) {
+      console.log(trx.user.toString(), userId.toString());
+      const incrementAmount = Number(result.amount) || 0;
+      user.usdtBalance = (user.usdtBalance || 0) + incrementAmount;
+      await user.save();
+
+      if (result.status && result.status.toLowerCase() === "completed") {
+        await trx.deleteOne();
+      }
+    } else {
+      return next(new ErrorResponse("Transaction not found", 404));
+    }
+
+    res.status(200).json({
+      success: true,
+      status: result,
+    });
+  } catch (error) {
+    console.error("Error checking USDT status:", error);
+    return next(new ErrorResponse("Error checking USDT status", 500));
+  }
+});
+
+exports.sendUSDT = asyncHandler(async (req, res, next) => {
+  const userId = req.user.id;
+  const { amount, vip_key, mode, address } = req.query;
+
+  if (!amount) {
+    return next(new ErrorResponse("Amount is required", 400));
+  }
+
+  // Find user
+  const user = await User.findById(userId);
+  if (!user) {
+    return next(new ErrorResponse("User not found", 404));
+  }
+
+  const exchangeResp = await exchangeRate();
+  const rate = exchangeResp.rate;
+  if (!exchangeResp || !exchangeResp.rate) {
+    return next(new ErrorResponse("Failed to fetch exchange rate", 500));
+  }
+
+  // Convert USD amount to NGN
+  const amountInUSD = parseFloat(amount);
+  if (isNaN(amountInUSD) || amountInUSD <= 0) {
+    return next(new ErrorResponse("Invalid amount", 400));
+  }
+
+  const serviceCharge = Number(process.env.USDT_DEPOSIT_FEE) || 0;
+  const percentDepositFee = Number(process.env.PERCENT_DEPOSIT_FEE) || 0;
+
+  const percentFee = amountInUSD * (percentDepositFee / 100);
+
+  const totalFeeUSD = serviceCharge + percentFee;
+  const totalDebitUSD = amountInUSD + totalFeeUSD;
+  const totalDebitNGN = totalDebitUSD * rate;
+
+  console.log({
+    rate,
+    totalDebitNGN,
+    amountInUSD,
+    serviceCharge,
+    percentDepositFee,
+  });
+
+  // Check user balance
+  if (user.accountBalance < totalDebitNGN) {
+    return next(new ErrorResponse("Insufficient balance", 400));
+  }
+
+  // Check if balance after debit will be at least 5000 NGN
+  if (user.accountBalance - totalDebitNGN < 5000) {
+    return next(
+      new ErrorResponse(
+        "Your account balance cannot go below 5000 NGN after this transaction",
+        400
+      )
+    );
+  }
+
+  // Debit user
+  user.accountBalance -= totalDebitNGN;
+  await user.save();
+
+  try {
+    const result = await sendUSDT({
+      amount: amountInUSD,
+      vip_key: process.env.STRO_VIP_KEY,
+      mode,
+      address: user.usdtAddress,
+    });
+
+    if (!result) {
+      // Refund user if USDT send fails
+      return next(
+        new ErrorResponse(result?.message || "Failed to send USDT", 500)
+      );
+    }
+
+    const newTrx = await UsdTrx.create({
+      message: result.message,
+      reference: result.reference,
+      address: result.address,
+      amount: result.amount,
+      charge: result.charge,
+      user: user._id,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "USDT in progress",
+      reference: result.reference,
+    });
+  } catch (error) {
+    // Refund user if error occurs
+    user.accountBalance += totalDebitNGN;
+    await user.save();
+    console.error("Error sending USDT:", error);
+    return next(new ErrorResponse("Error sending USDT", 500));
+  }
+});
+
+// exports.batchCreateUSDTAddresses = async (
+//   batchSize = 100,
+//   concurrency = 10
+// ) => {
+//   const totalUsers = await User.countDocuments({
+//     usdtAddress: { $exists: false },
+//   });
+//   console.log(`Total users without USDT address: ${totalUsers}`);
+
+//   const pLimit = (await import("p-limit")).default;
+//   const limit = pLimit(concurrency); // limits concurrent API calls
+//   const totalBatches = Math.ceil(totalUsers / batchSize);
+
+//   for (let batch = 0; batch < totalBatches; batch++) {
+//     const users = await User.find({ usdtAddress: { $exists: false } })
+//       .skip(batch * batchSize)
+//       .limit(batchSize);
+
+//     console.log(
+//       `Processing batch ${batch + 1}/${totalBatches} with ${users.length} users`
+//     );
+
+//     const promises = users.map((user) =>
+//       limit(async () => {
+//         try {
+//           const stringedUserId = user._id.toString();
+//           const lastSixDigits = stringedUserId.slice(-6).padStart(6, "0");
+//           const userLabel = `${lastSixDigits}_USDT`;
+
+//           const addressResult = await createUSDTAddress({
+//             label: userLabel,
+//             vip_key: process.env.STRO_VIP_KEY,
+//             webhook_url: `https://go-flexi-be-zmy7.onrender.com/webhooks/strowallet`,
+//           });
+
+//           if (addressResult?.address) {
+//             user.usdtAddress = addressResult.address;
+//             await user.save();
+//             console.log(`USDT address created for user ${user._id}`);
+//           } else {
+//             console.error(`Failed to create USDT address for user ${user._id}`);
+//           }
+//         } catch (err) {
+//           console.error(`Error processing user ${user._id}:`, err.message);
+//         }
+//       })
+//     );
+
+//     await Promise.all(promises);
+//   }
+
+//   console.log("Batch processing complete ✅");
+// };
 
 // const processUser = async (user) => {
 //   try {

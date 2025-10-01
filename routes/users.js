@@ -1,6 +1,5 @@
 // Require express and the User model
 const express = require("express");
-
 const {
   getUser,
   getAllUsers,
@@ -16,6 +15,9 @@ const {
   getUserByEmail,
   blockUser,
   unblockUser,
+  createUSDTAddress,
+  sendUSDT,
+  checkUSDTStatus,
 } = require("../controllers/users");
 const { checkBlocked } = require("../middlewares/checkBlock");
 const { protect, authorize } = require("../middlewares/auth");
@@ -62,6 +64,23 @@ router.post("/add-beneficiary", protect, authorize("user"), addBeneficiary);
 router.put("/:id/block", protect, authorize("admin"), blockUser);
 
 router.put("/:id/unblock", protect, authorize("admin"), unblockUser);
+
+router.post(
+  "/create-usdt-address",
+  protect,
+  authorize("user"),
+  createUSDTAddress
+);
+
+router.post("/send-usdt", protect, authorize("user"), sendUSDT);
+
+router.get(
+  "/user/usdt-status",
+  protect,
+  authorize("user"),
+  checkBlocked,
+  checkUSDTStatus
+);
 
 // router.post("/get-net-amount", getNetAmount);
 // router.post("/process-batches", processInBatches);
