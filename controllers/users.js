@@ -1,6 +1,6 @@
 // Require express and the User model
 const User = require("../models/User");
-const UsdTrx = require("../models/UsdTrx");
+const UsdTrx = require("../models/USDTrx");
 const Deposit = require("../models/Deposit");
 const Transfer = require("../models/Transfer");
 const asyncHandler = require("../middlewares/async");
