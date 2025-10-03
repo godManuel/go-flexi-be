@@ -224,6 +224,30 @@ exports.getAllUserTransactions = asyncHandler(async (req, res, next) => {
   });
 });
 
+exports.getUserTransaction = asyncHandler(async (req, res, next) => {
+  const { transactionId } = req.params;
+
+  const { type } = req.query;
+
+  let transaction;
+  if (type === "deposit") {
+    transaction = await Deposit.findById(transactionId);
+  } else if (type === "transfer") {
+    transaction = await Transfer.findById(transactionId);
+  } else {
+    return next(new ErrorResponse("Invalid transaction type", 400));
+  }
+
+  if (!transaction) {
+    return next(new ErrorResponse("Transaction not found", 404));
+  }
+
+  res.status(200).json({
+    success: true,
+    transaction,
+  });
+});
+
 exports.sendNotificationToUser = asyncHandler(async (req, res, next) => {
   const { email, subject, message } = req.body;
 

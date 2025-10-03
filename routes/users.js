@@ -18,6 +18,7 @@ const {
   createUSDTAddress,
   sendUSDT,
   checkUSDTStatus,
+  getUserTransaction,
 } = require("../controllers/users");
 const { checkBlocked } = require("../middlewares/checkBlock");
 const { protect, authorize } = require("../middlewares/auth");
@@ -47,6 +48,14 @@ router.post("/create-admin", createAdmin);
 // Transactions endpoints (router 1: user, router 2: admin)
 router.get("/:userId/transactions", protect, getUserTransactions);
 router.get("/transactions", protect, getAllUserTransactions);
+
+router.get(
+  "/transactions/:transactionId",
+  protect,
+  authorize("user"),
+  checkBlocked,
+  getUserTransaction
+);
 
 // Notification endpoints (All routers are admin only)
 router.post(

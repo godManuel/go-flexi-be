@@ -7,8 +7,6 @@ const {
 const asyncHandler = require("../middlewares/async");
 const User = require("../models/User");
 const ErrorResponse = require("../utils/errorResponse");
-const cloudinary = require("../utils/cloudinary.js");
-const fs = require("fs");
 const path = require("path");
 // const axios = require("axios");
 const { bankCodes } = require("../config/bankCodes.js");
@@ -271,15 +269,14 @@ exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
     });
 
     if (result) {
-      // (Optional) validate account name with business name
-      // if (result.data.account_name !== business_name) {
-      //   return next(
-      //     new ErrorResponse(
-      //       "Not business account! Provide the account for your business",
-      //       400
-      //     )
-      //   );
-      // }
+      if (result.data.account_name !== business_name) {
+        return next(
+          new ErrorResponse(
+            "Not business account! Provide the account for your business",
+            400
+          )
+        );
+      }
 
       const corporateBiz = await CorporateBiz.create({
         businessName: business_name,
