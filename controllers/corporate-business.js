@@ -24,6 +24,20 @@ exports.updateCorporateBusiness = asyncHandler(async (req, res, next) => {
 
   if (action === "approve") {
     corporateBusiness.status = "verified";
+    // Generate unique 7-digit code and assign to user
+    do {
+      uniqueCode = Math.floor(1000000 + Math.random() * 9000000);
+      codeExists = await User.exists({
+        merchantVerificationCode: uniqueCode,
+      });
+    } while (codeExists);
+
+    // Save the code to the user
+    await User.findByIdAndUpdate(
+      corporateBusiness.userId,
+      { merchantVerificationCode: uniqueCode },
+      { new: true }
+    );
   } else if (action === "decline") {
     corporateBusiness.status = "declined";
   } else {
