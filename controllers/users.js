@@ -525,7 +525,7 @@ exports.checkUSDTStatus = asyncHandler(async (req, res, next) => {
 
 exports.sendUSDT = asyncHandler(async (req, res, next) => {
   const userId = req.user.id;
-  const { amount, vip_key, mode, address } = req.query;
+  const { amount, mode } = req.query;
 
   if (!amount) {
     return next(new ErrorResponse("Amount is required", 400));
@@ -592,6 +592,8 @@ exports.sendUSDT = asyncHandler(async (req, res, next) => {
       mode,
       address: user.usdtAddress,
     });
+
+    console.log(result);
 
     if (!result) {
       // Refund user if USDT send fails

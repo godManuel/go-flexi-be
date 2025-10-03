@@ -52,7 +52,7 @@ router.get("/transactions", protect, getAllUserTransactions);
 router.get(
   "/transactions/:transactionId",
   protect,
-  authorize("user"),
+  authorize("user", "admin"),
   checkBlocked,
   getUserTransaction
 );
