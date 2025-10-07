@@ -165,6 +165,15 @@ exports.verifyCac = asyncHandler(async (req, res, next) => {
       return next(new ErrorResponse("User not found", 404));
     }
 
+    if (!user.usdtBalance || user.usdtBalance < 15) {
+      return next(
+        new ErrorResponse(
+          "Insufficient USDT balance (minimum $15 required)",
+          400
+        )
+      );
+    }
+
     if (user.accountBalance < 5000) {
       return next(new ErrorResponse("Insufficient Funds", 400));
     }
@@ -239,6 +248,12 @@ exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse("User not found", 404));
   }
 
+  if (!user.usdtBalance || user.usdtBalance < 15) {
+    return next(
+      new ErrorResponse("Insufficient USDT balance (minimum $15 required)", 400)
+    );
+  }
+
   if (user.accountBalance < 5000) {
     return next(new ErrorResponse("Insufficient Funds", 400));
   }
@@ -283,6 +298,10 @@ exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
         accountNumber: account_number,
         bankName: bank_name,
         accountName: result.data.account_name,
+        isMember: req.body.isMember,
+        corporativeName: req.body.corporativeName,
+        profileNumber: req.body.profileNumber,
+        verificationCode: req.body.verificationCode,
         image: filePath, // Save relative file path instead of Cloudinary URL
         user: req.user.id,
         status: "pending",

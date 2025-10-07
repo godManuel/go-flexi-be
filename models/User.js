@@ -129,6 +129,7 @@ const userSchema = new mongoose.Schema(
     usdtBalance: {
       type: Number,
       default: 0,
+      min: [5, "Minimum USDT balance is 5 USDT"],
     },
   },
   { timestamps: true }

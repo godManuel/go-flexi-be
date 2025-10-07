@@ -16,6 +16,13 @@ const corporateBiz = new mongoose.Schema(
       enum: ["unverified", "verified", "declined"],
       default: "unverified",
     },
+    isMember: {
+      type: Boolean,
+      default: false,
+    },
+    corporativeName: String,
+    profileNumber: String,
+    verificationCode: String,
   },
   { timestamps: true }
 );

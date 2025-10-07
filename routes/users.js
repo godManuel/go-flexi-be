@@ -68,7 +68,13 @@ router.post(
 router.post("/notify", sendNotificationToUser);
 
 // Beneficiary endpoint (User only)
-router.post("/add-beneficiary", protect, authorize("user"), addBeneficiary);
+router.post(
+  "/add-beneficiary",
+  protect,
+  checkBlocked,
+  authorize("user"),
+  addBeneficiary
+);
 
 router.put("/:id/block", protect, authorize("admin"), blockUser);
 
@@ -77,11 +83,20 @@ router.put("/:id/unblock", protect, authorize("admin"), unblockUser);
 router.post(
   "/create-usdt-address",
   protect,
+  checkBlocked,
   authorize("user"),
   createUSDTAddress
 );
 
-router.post("/send-usdt", protect, authorize("user"), sendUSDT);
+router.post("/send-usdt", protect, checkBlocked, authorize("user"), sendUSDT);
+
+router.post(
+  "/deposit-usd",
+  protect,
+  checkBlocked,
+  authorize("user"),
+  depositUSD
+);
 
 router.get(
   "/user/usdt-status",

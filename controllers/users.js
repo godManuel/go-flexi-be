@@ -430,6 +430,81 @@ exports.unblockUser = asyncHandler(async (req, res, next) => {
   res.json({ success: true, message: "User unblocked successfully", user });
 });
 
+exports.depositUSD = asyncHandler(async (req, res, next) => {
+  const userId = req.user.id;
+  const { amount } = req.query;
+
+  if (!amount) {
+    return next(new ErrorResponse("Amount is required", 400));
+  }
+
+  // Find user
+  const user = await User.findById(userId);
+  if (!user) {
+    return next(new ErrorResponse("User not found", 404));
+  }
+
+  const exchangeResp = await exchangeRate();
+  const rate = exchangeResp.rate;
+  if (!exchangeResp || !exchangeResp.rate) {
+    return next(new ErrorResponse("Failed to fetch exchange rate", 500));
+  }
+
+  // Convert USD amount to NGN
+  const amountInUSD = parseFloat(amount);
+  if (isNaN(amountInUSD) || amountInUSD <= 0) {
+    return next(new ErrorResponse("Invalid amount", 400));
+  }
+
+  const serviceCharge = Number(process.env.USDT_DEPOSIT_FEE) || 0;
+  const percentDepositFee = Number(process.env.PERCENT_DEPOSIT_FEE) || 0;
+
+  const percentFee = amountInUSD * (percentDepositFee / 100);
+
+  const totalFeeUSD = serviceCharge + percentFee;
+  const totalDebitUSD = amountInUSD + totalFeeUSD;
+  const totalDebitNGN = totalDebitUSD * rate;
+
+  console.log({
+    rate,
+    totalDebitNGN,
+    amountInUSD,
+    serviceCharge,
+    percentDepositFee,
+  });
+
+  // Check user balance
+  if (user.accountBalance < totalDebitNGN) {
+    return next(new ErrorResponse("Insufficient balance", 400));
+  }
+
+  // Check if balance after debit will be at least 5000 NGN
+  if (user.accountBalance - totalDebitNGN < 5000) {
+    return next(
+      new ErrorResponse(
+        "Your account balance cannot go below 5000 NGN after this transaction",
+        400
+      )
+    );
+  }
+
+  // Debit user
+  user.accountBalance -= totalDebitNGN;
+  user.usdtBalance += amountInUSD;
+  await user.save();
+
+  const newTrx = await UsdTrx.create({
+    amount: amountInUSD,
+    user: user._id,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "USD sent successfully",
+    data: newTrx,
+  });
+});
+
 exports.createUSDTAddress = asyncHandler(async (req, res, next) => {
   const userId = req.user.id;
 
