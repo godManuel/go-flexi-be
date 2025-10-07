@@ -17,6 +17,7 @@ const {
   unblockUser,
   createUSDTAddress,
   sendUSDT,
+  depositUSD,
   checkUSDTStatus,
   getUserTransaction,
 } = require("../controllers/users");
