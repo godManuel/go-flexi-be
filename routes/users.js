@@ -25,7 +25,7 @@ const { checkBlocked } = require("../middlewares/checkBlock");
 const { protect, authorize } = require("../middlewares/auth");
 const User = require("../models/User");
 const advancedResults = require("../middlewares/advancedResults");
-const { enforceMerchantUsdt } = require("../middlewares/merchant");
+const enforceMerchantUsdt = require("../middlewares/merchant");
 
 const router = express.Router();
 
