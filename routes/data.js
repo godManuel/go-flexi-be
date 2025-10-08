@@ -4,8 +4,22 @@ const { checkBlocked } = require("../middlewares/checkBlock");
 const { protect, authorize } = require("../middlewares/auth");
 const { dataPlans, buyData } = require("../controllers/data");
 
-router.get("/plans", protect, checkBlocked, authorize("user"), dataPlans);
+router.get(
+  "/plans",
+  protect,
+  checkBlocked,
+  enforceMerchantUsdt,
+  authorize("user"),
+  dataPlans
+);
 
-router.post("/purchase", protect, checkBlocked, authorize("user"), buyData);
+router.post(
+  "/purchase",
+  protect,
+  checkBlocked,
+  enforceMerchantUsdt,
+  authorize("user"),
+  buyData
+);
 
 module.exports = router;

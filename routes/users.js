@@ -25,6 +25,7 @@ const { checkBlocked } = require("../middlewares/checkBlock");
 const { protect, authorize } = require("../middlewares/auth");
 const User = require("../models/User");
 const advancedResults = require("../middlewares/advancedResults");
+const { enforceMerchantUsdt } = require("../middlewares/merchant");
 
 const router = express.Router();
 
@@ -47,14 +48,25 @@ router.put("/debit-balance", protect, authorize("admin"), debitUserBalance);
 router.post("/create-admin", createAdmin);
 
 // Transactions endpoints (router 1: user, router 2: admin)
-router.get("/:userId/transactions", protect, getUserTransactions);
-router.get("/transactions", protect, getAllUserTransactions);
+router.get(
+  "/:userId/transactions",
+  protect,
+  enforceMerchantUsdt,
+  getUserTransactions
+);
+router.get(
+  "/transactions",
+  protect,
+  enforceMerchantUsdt,
+  getAllUserTransactions
+);
 
 router.get(
   "/transactions/:transactionId",
   protect,
   authorize("user", "admin"),
   checkBlocked,
+  enforceMerchantUsdt,
   getUserTransaction
 );
 
@@ -74,6 +86,7 @@ router.post(
   protect,
   checkBlocked,
   authorize("user"),
+  enforceMerchantUsdt,
   addBeneficiary
 );
 
