@@ -13,7 +13,7 @@ const corporateBiz = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["unverified", "verified", "declined"],
+      enum: ["unverified", "verified", "declined", "pending"],
       default: "unverified",
     },
     isMember: {
