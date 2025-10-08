@@ -277,52 +277,47 @@ exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
 
   const bank_code = matchedBank.bankCode;
 
-  try {
-    const result = await getReceiverAcctName({
-      account_number,
-      bank_code,
+  const result = await getReceiverAcctName({
+    account_number,
+    bank_code,
+  });
+
+  if (result) {
+    if (result.data.account_name !== business_name) {
+      return next(
+        new ErrorResponse(
+          "Not business account! Provide the account for your business",
+          400
+        )
+      );
+    }
+
+    const corporateBiz = await CorporateBiz.create({
+      businessName: business_name,
+      accountNumber: account_number,
+      bankName: bank_name,
+      accountName: result.data.account_name,
+      isMember: req.body.isMember,
+      corporativeName: req.body.corporativeName,
+      profileNumber: req.body.profileNumber,
+      verificationCode: req.body.verificationCode,
+      image: filePath, // Save relative file path instead of Cloudinary URL
+      user: req.user.id,
+      status: "pending",
     });
 
-    if (result) {
-      if (result.data.account_name !== business_name) {
-        return next(
-          new ErrorResponse(
-            "Not business account! Provide the account for your business",
-            400
-          )
-        );
-      }
+    await corporateBiz.save();
 
-      const corporateBiz = await CorporateBiz.create({
-        businessName: business_name,
-        accountNumber: account_number,
-        bankName: bank_name,
-        accountName: result.data.account_name,
-        isMember: req.body.isMember,
-        corporativeName: req.body.corporativeName,
-        profileNumber: req.body.profileNumber,
-        verificationCode: req.body.verificationCode,
-        image: filePath, // Save relative file path instead of Cloudinary URL
-        user: req.user.id,
-        status: "pending",
-      });
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      {
+        corporateBiz: corporateBiz._id,
+        isKYC: "pending",
+        $inc: { accountBalance: -5500 },
+      },
+      { new: true } // returns the updated user
+    ).populate("corporateBiz");
 
-      await corporateBiz.save();
-
-      const updatedUser = await User.findByIdAndUpdate(
-        req.user.id,
-        {
-          corporateBiz: corporateBiz._id,
-          isKYC: "pending",
-          $inc: { accountBalance: -5500 },
-        },
-        { new: true } // returns the updated user
-      ).populate("corporateBiz");
-
-      res.status(200).json({ success: true, data: updatedUser });
-    }
-  } catch (error) {
-    console.error("Error checking account name:", error);
-    return next(new ErrorResponse("Failed to check account name", 500));
+    res.status(200).json({ success: true, data: updatedUser });
   }
 });
