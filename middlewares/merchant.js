@@ -8,10 +8,7 @@ const enforceMerchantUsdt = async (req, res, next) => {
       return next(new ErrorResponse("User not found", 404));
     }
 
-    if (
-      user.tier === "merchant" &&
-      (!user.usdtBalance || user.usdtBalance < 15)
-    ) {
+    if (user.tier === "merchant" && user.usdtBalance < 15) {
       return next(
         new ErrorResponse(
           "Merchants must maintain a minimum USDT balance of $15 to carry out transactions.",

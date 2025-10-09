@@ -281,7 +281,7 @@ exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
     businessName: business_name,
     accountNumber: account_number,
     bankName: bank_name,
-    accountName: result.data.account_name,
+    accountName: req.body.accountName,
     isMember: req.body.isMember,
     corporativeName: req.body.corporativeName,
     profileNumber: req.body.profileNumber,
