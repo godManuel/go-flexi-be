@@ -24,6 +24,7 @@ exports.updateCorporateBusiness = asyncHandler(async (req, res, next) => {
 
   if (action === "approve") {
     corporateBusiness.status = "verified";
+    await corporateBusiness.save();
     // Generate unique 7-digit code and assign to user
     do {
       uniqueCode = Math.floor(1000000 + Math.random() * 9000000);
@@ -40,6 +41,7 @@ exports.updateCorporateBusiness = asyncHandler(async (req, res, next) => {
     );
   } else if (action === "decline") {
     corporateBusiness.status = "declined";
+    await corporateBusiness.save();
   } else {
     return next(new ErrorResponse("Invalid action", 400));
   }
