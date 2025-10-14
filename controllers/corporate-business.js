@@ -49,6 +49,7 @@ exports.updateCorporateBusiness = asyncHandler(async (req, res, next) => {
 
   // Notify user
   const user = await User.findById(corporateBusiness.userId);
+  console.log(corporateBusiness.userId);
   if (!user) return next(new ErrorResponse("User not found!"));
 
   if (user) {

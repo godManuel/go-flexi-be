@@ -501,7 +501,7 @@ exports.depositUSD = asyncHandler(async (req, res, next) => {
   res.status(200).json({
     success: true,
     message: "USD sent successfully",
-    data: newTrx,
+    data: { newTrx, user: user.accountBalance },
   });
 });
 
