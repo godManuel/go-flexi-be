@@ -236,12 +236,12 @@ exports.verifyCac = asyncHandler(async (req, res, next) => {
 });
 
 exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
-  if (!req.file) {
-    return next(new ErrorResponse("No file uploaded", 400));
-  }
+  // if (!req.file) {
+  //   return next(new ErrorResponse("No file uploaded", 400));
+  // }
 
-  const filePath = `/uploads/${req.file.filename}`; // stored path for DB
-  const absolutePath = path.join(__dirname, "..", "uploads", req.file.filename);
+  // const filePath = `/uploads/${req.file.filename}`; // stored path for DB
+  // const absolutePath = path.join(__dirname, "..", "uploads", req.file.filename);
 
   const user = await User.findById(req.user.id);
   if (!user) {

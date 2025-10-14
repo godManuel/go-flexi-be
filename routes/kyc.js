@@ -9,7 +9,7 @@ const {
   verifyCac,
   verifyCorporateBusiness,
 } = require("../controllers/kyc");
-const upload = require("../utils/multer");
+// const upload = require("../utils/multer");
 
 router.post("/verify-bvn", protect, checkBlocked, authorize("user"), verifyBvn);
 router.post(
@@ -25,7 +25,6 @@ router.post(
   "/verify-corporate-business",
   protect,
   authorize("user"),
-  upload.single("image"),
   verifyCorporateBusiness
 );
 
