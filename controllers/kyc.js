@@ -282,11 +282,14 @@ exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
     accountNumber: account_number,
     bankName: bank_name,
     accountName: req.body.accountName,
-    isMember: req.body.isMember,
+    cooperativeType: req.body.cooperativeType,
     corporativeName: req.body.corporativeName,
+    certificateNumber: req.body.certificateNumber,
     profileNumber: req.body.profileNumber,
     verificationCode: req.body.verificationCode,
-    image: filePath, // Save relative file path instead of Cloudinary URL
+    memberNumber: req.body.memberNumber,
+    chairmanDetails: req.body.chairmanDetails,
+    secretaryDetails: req.body.secretaryDetails,
     user: req.user.id,
     status: "pending",
   });
