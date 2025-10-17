@@ -21,6 +21,7 @@ exports.updateCorporateBusiness = asyncHandler(async (req, res, next) => {
   if (!corporateBusiness) {
     return next(new ErrorResponse("Corporate business form not found", 404));
   }
+  console.log(corporateBusiness);
 
   if (action === "approve") {
     corporateBusiness.status = "verified";
@@ -48,8 +49,8 @@ exports.updateCorporateBusiness = asyncHandler(async (req, res, next) => {
   await corporateBusiness.save();
 
   // Notify user
-  const user = await User.findById(corporateBusiness.userId);
-  console.log(corporateBusiness.userId);
+  const user = await User.findById(corporateBusiness.user);
+  console.log(corporateBusiness);
   if (!user) return next(new ErrorResponse("User not found!"));
 
   if (user) {
