@@ -88,6 +88,17 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
     user.accountBalance -= totalRequired;
     const savedUser = await user.save();
 
+    await Transaction.create({
+      user: user._id,
+      amount: transferAmount,
+      type: "transfer",
+      description: `Transfer to ${bank_name} - ${account_number} (${
+        narration || "Funds transfer"
+      })`,
+      transfer: transfer._id,
+      balanceAfter: user.accountBalance,
+    });
+
     // Success response
     return res
       .status(200)

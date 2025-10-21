@@ -264,17 +264,6 @@ exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
 
   const { business_name, account_number, bank_name } = req.body;
 
-  const matchedBank = bankCodes.find(
-    (bank) =>
-      bank.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim()
-  );
-
-  if (!matchedBank) {
-    return res
-      .status(400)
-      .json({ error: `Unsupported bank name: ${bank_name}` });
-  }
-
   // const bank_code = matchedBank.bankCode;
 
   const corporateBiz = await CorporateBiz.create({

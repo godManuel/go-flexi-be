@@ -67,19 +67,18 @@ exports.stroWallet = asyncHandler(async (req, res, next) => {
         { new: true }
       );
 
-      // const transaction = await Transaction.create({
-      //   user: user._id,
-      //   type: "deposit",
-      //   amount: newAcctBal,
-      //   reference: deposit._id,
-      //   status: "successful",
-      //   description: input.tranRemarks,
-      //   date: deposit.tranDateTime,
-      // });
+      await Transaction.create({
+        user: user._id,
+        type: "deposit",
+        amount: +netAmount,
+        deposit: deposit._id,
+        description: deposit.tranRemarks || "Account Deposit",
+        balanceAfter: +newAcctBal,
+        date: deposit.tranDateTime,
+      });
 
-      // user.accountBalance = newAcctBal;
-      // // user.transactions.push(deposit._id);
-      // await user.save();
+      user.transactions.push(deposit._id);
+      await user.save();
 
       // Send credit alert email
       try {

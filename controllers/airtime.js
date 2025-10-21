@@ -30,6 +30,14 @@ exports.buyAirtime = asyncHandler(async (req, res, next) => {
       user.accountBalance -= amount;
       const updatedUser = await user.save();
 
+      await Transaction.create({
+        user: user._id,
+        amount: +amount,
+        type: "airtime",
+        description: `Purchased ${service_name} airtime for ${phone}`,
+        balanceAfter: user.accountBalance,
+      });
+
       res.status(200).json({ success: true, data: updatedUser });
     } else {
       return next(new ErrorResponse("Airtime purchase failed", 500));

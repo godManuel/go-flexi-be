@@ -1,4 +1,5 @@
 // Require express and the User model
+const Transaction = require("../models/Transaction");
 const User = require("../models/User");
 const UsdTrx = require("../models/USDTrx");
 const Deposit = require("../models/Deposit");
@@ -60,6 +61,14 @@ exports.creditUserBalance = asyncHandler(async (req, res, next) => {
   user.accountBalance += +amount;
   await user.save();
 
+  await Transaction.create({
+    user: user._id,
+    amount: +amount,
+    type: "credit",
+    description: `Account credited by admin`,
+    balanceAfter: user.accountBalance,
+  });
+
   // Send credit alert email
   try {
     await sendEmail(
@@ -106,6 +115,14 @@ exports.debitUserBalance = asyncHandler(async (req, res, next) => {
   user.accountBalance -= +amount;
   await user.save();
 
+  await Transaction.create({
+    user: user._id,
+    amount: +amount,
+    type: "debit",
+    description: `Account debited by admin`,
+    balanceAfter: user.accountBalance,
+  });
+
   // Send debit alert email
   try {
     await sendEmail(
@@ -130,6 +147,110 @@ exports.debitUserBalance = asyncHandler(async (req, res, next) => {
     user: {
       id: user.id,
       accountBalance: user.accountBalance,
+    },
+  });
+});
+
+exports.creditUSDBalance = asyncHandler(async (req, res, next) => {
+  const { email, amount } = req.body;
+  if (!email || !amount) {
+    return next(new ErrorResponse("Email and amount are required", 400));
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    return next(new ErrorResponse("User not found", 404));
+  }
+
+  user.usdtBalance += +amount;
+  await user.save();
+
+  await Transaction.create({
+    user: user._id,
+    amount: +amount,
+    type: "credit",
+    description: `Account credited by admin`,
+    balanceAfter: user.usdtBalance,
+  });
+
+  // Send credit alert email
+  try {
+    await sendEmail(
+      user.email,
+      "Credit Alert",
+      "credit-alert", // View name
+      {
+        name: user.fullName,
+        amount: amount,
+        date: new Date().toLocaleDateString(),
+        balance: user.usdtBalance,
+      }
+    );
+  } catch (error) {
+    console.error("Failed to send credit alert email:", error);
+    // Optionally, you can continue without failing the request
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "User USD account balance updated successfully",
+    user: {
+      id: user.id,
+      accountBalance: user.usdtBalance,
+    },
+  });
+});
+
+exports.debitUSDBalance = asyncHandler(async (req, res, next) => {
+  const { email, amount } = req.body;
+  if (!email || !amount) {
+    return next(new ErrorResponse("Email and amount are required", 400));
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    return next(new ErrorResponse("User not found", 404));
+  }
+
+  if (user.usdtBalance < +amount) {
+    return next(new ErrorResponse("Insufficient balance", 400));
+  }
+
+  user.usdtBalance -= +amount;
+  await user.save();
+
+  await Transaction.create({
+    user: user._id,
+    amount: +amount,
+    type: "debit",
+    description: `Account debited by admin`,
+    balanceAfter: user.usdtBalance,
+  });
+
+  // Send debit alert email
+  try {
+    await sendEmail(
+      user.email,
+      "Debit Alert",
+      "debit-alert", // View name
+      {
+        name: user.fullName,
+        amount: amount,
+        date: new Date().toLocaleDateString(),
+        balance: user.usdtBalance,
+      }
+    );
+  } catch (error) {
+    console.error("Failed to send debit alert email:", error);
+    // Optionally, you can continue without failing the request
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "User USD account debited successfully",
+    user: {
+      id: user.id,
+      accountBalance: user.usdtBalance,
     },
   });
 });
@@ -174,8 +295,15 @@ exports.getUserTransactions = asyncHandler(async (req, res, next) => {
   const user = await User.findById(userId);
   if (!user) return res.status(404).json({ message: "User not found" });
 
-  const deposits = await Deposit.find({ user: userId }).lean();
-  const transfers = await Transfer.find({ user: userId }).lean();
+  const [deposits, transfers, usdTrxs, transactions] = await Promise.all([
+    Deposit.find({ user: userId }).lean(),
+    Transfer.find({ user: userId }).lean(),
+    UsdTrx.find({ user: userId }).lean(),
+    Transaction.find({
+      user: userId,
+      type: { $in: ["data", "airtime", "credit", "debit"] },
+    }).lean(),
+  ]);
 
   // Format deposits with fee calculation
   const formattedDeposits = deposits.map((d) => {
@@ -199,11 +327,34 @@ exports.getUserTransactions = asyncHandler(async (req, res, next) => {
     createdAt: t.createdAt,
   }));
 
-  const transactions = [...formattedDeposits, ...formattedTransfers].sort(
-    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-  );
+  const formattedUsdTrxs = usdTrxs.map((u) => ({
+    _id: u._id,
+    type: "usd_transaction",
+    amount: u.amount,
+    currency: u.currency || "USD",
+    description: u.description || "USD Transaction",
+    createdAt: u.createdAt,
+  }));
 
-  res.json({ user, transactions });
+  const formattedTransactions = transactions.map((t) => ({
+    _id: t._id,
+    type: t.type,
+    amount: t.amount,
+    reference: t.reference,
+    status: t.status,
+    description: t.description || `${t.type} transaction`,
+    createdAt: t.createdAt,
+  }));
+
+  // 4️⃣ Merge and sort all transactions
+  const allTransactions = [
+    ...formattedDeposits,
+    ...formattedTransfers,
+    ...formattedUsdTrxs,
+    ...formattedTransactions,
+  ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  res.json({ user, allTransactions });
 });
 
 // Get all users transactions for admin

@@ -53,9 +53,18 @@ exports.buyData = asyncHandler(async (req, res, next) => {
       variation_code,
     });
 
-    if(result) {
+    if (result) {
       user.accountBalance -= amount;
       const updatedUser = await user.save();
+
+      // Record transaction
+      await Transaction.create({
+        user: user._id,
+        amount: +amount,
+        type: "data",
+        description: `Purchased ${service_name} data for ${phone}`,
+        balanceAfter: user.accountBalance,
+      });
 
       res.status(200).json({ success: true, data: updatedUser });
     } else {

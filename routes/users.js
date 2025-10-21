@@ -20,6 +20,8 @@ const {
   depositUSD,
   checkUSDTStatus,
   getUserTransaction,
+  creditUSDBalance,
+  debitUSDBalance,
 } = require("../controllers/users");
 const { checkBlocked } = require("../middlewares/checkBlock");
 const { protect, authorize } = require("../middlewares/auth");
@@ -43,6 +45,9 @@ router.post("/user", protect, authorize("admin"), getUserByEmail);
 // Update Balance endpoints (All routers are admin only)
 router.put("/credit-balance", protect, authorize("admin"), creditUserBalance);
 router.put("/debit-balance", protect, authorize("admin"), debitUserBalance);
+
+router.put("/credit-usd", protect, authorize("admin"), creditUSDBalance);
+router.put("/debit-usd", protect, authorize("admin"), debitUSDBalance);
 
 // Admin endpoint (For superadmin)
 router.post("/create-admin", createAdmin);
