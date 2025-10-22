@@ -25,6 +25,9 @@ const {
 } = require("../controllers/users");
 const { checkBlocked } = require("../middlewares/checkBlock");
 const { protect, authorize } = require("../middlewares/auth");
+const {
+  checkTierVerification,
+} = require("../middlewares/checkTierVerification.js");
 const User = require("../models/User");
 const advancedResults = require("../middlewares/advancedResults");
 const enforceMerchantUsdt = require("../middlewares/merchant");
@@ -56,12 +59,14 @@ router.post("/create-admin", createAdmin);
 router.get(
   "/:userId/transactions",
   protect,
+  checkTierVerification,
   enforceMerchantUsdt,
   getUserTransactions
 );
 router.get(
   "/transactions",
   protect,
+  checkTierVerification,
   enforceMerchantUsdt,
   getAllUserTransactions
 );
@@ -71,6 +76,7 @@ router.get(
   protect,
   authorize("user", "admin"),
   checkBlocked,
+  checkTierVerification,
   enforceMerchantUsdt,
   getUserTransaction
 );
@@ -91,6 +97,7 @@ router.post(
   protect,
   checkBlocked,
   authorize("user"),
+  checkTierVerification,
   enforceMerchantUsdt,
   addBeneficiary
 );
@@ -107,7 +114,14 @@ router.post(
   createUSDTAddress
 );
 
-router.post("/send-usdt", protect, checkBlocked, authorize("user"), sendUSDT);
+router.post(
+  "/send-usdt",
+  protect,
+  checkTierVerification,
+  checkBlocked,
+  authorize("user"),
+  sendUSDT
+);
 
 router.post(
   "/deposit-usd",

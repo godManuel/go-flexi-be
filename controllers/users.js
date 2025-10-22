@@ -340,7 +340,6 @@ exports.getUserTransactions = asyncHandler(async (req, res, next) => {
     _id: t._id,
     type: t.type,
     amount: t.amount,
-    reference: t.reference,
     status: t.status,
     description: t.description || `${t.type} transaction`,
     createdAt: t.createdAt,
@@ -849,6 +848,57 @@ exports.sendUSDT = asyncHandler(async (req, res, next) => {
     console.error("Error sending USDT:", error);
     return next(new ErrorResponse("Error sending USDT", 500));
   }
+});
+
+exports.addNumbers = asyncHandler(async (req, res, next) => {
+  const userId = req.user?.id;
+  if (!userId) {
+    return next(new ErrorResponse("Unauthorized", 401));
+  }
+
+  const { nin, cac } = req.body;
+
+  if (!nin && !cac) {
+    return next(new ErrorResponse("Provide NIN or CAC number to update", 400));
+  }
+
+  const user = await User.findById(userId);
+  if (!user) {
+    return next(new ErrorResponse("User not found", 404));
+  }
+
+  // Basic validations
+  if (nin) {
+    const ninTrim = String(nin).trim();
+    if (!/^\d{11}$/.test(ninTrim)) {
+      return next(new ErrorResponse("Invalid NIN. It must be 11 digits.", 400));
+    }
+    user.ninNumber = ninTrim;
+    user.ninProvided = true;
+    // If NIN was not previously verified, keep verified false to require verification step
+    if (user.ninVerified !== true) user.ninVerified = false;
+  }
+
+  if (cac) {
+    const cacTrim = String(cac).trim();
+    if (cacTrim.length < 3) {
+      return next(new ErrorResponse("Invalid CAC number.", 400));
+    }
+    user.cacNumber = cacTrim;
+    user.cacProvided = true;
+    if (user.cacVerified !== true) user.cacVerified = false;
+  }
+
+  await user.save();
+
+  // Return updated user (exclude password)
+  const updatedUser = await User.findById(userId).select("-password");
+
+  res.status(200).json({
+    success: true,
+    message: "Identification numbers updated successfully",
+    user: updatedUser,
+  });
 });
 
 // exports.batchCreateUSDTAddresses = async (
