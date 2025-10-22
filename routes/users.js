@@ -22,6 +22,7 @@ const {
   getUserTransaction,
   creditUSDBalance,
   debitUSDBalance,
+  addNumbers,
 } = require("../controllers/users");
 const { checkBlocked } = require("../middlewares/checkBlock");
 const { protect, authorize } = require("../middlewares/auth");
@@ -137,6 +138,15 @@ router.get(
   authorize("user"),
   checkBlocked,
   checkUSDTStatus
+);
+
+router.post(
+  "/add-nin-cac",
+  protect,
+  authorize("user"),
+  checkBlocked,
+  checkUSDTStatus,
+  addNumbers
 );
 
 // router.post("/get-net-amount", getNetAmount);
