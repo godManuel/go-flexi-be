@@ -26,9 +26,9 @@ const {
 } = require("../controllers/users");
 const { checkBlocked } = require("../middlewares/checkBlock");
 const { protect, authorize } = require("../middlewares/auth");
-const {
-  checkTierVerification,
-} = require("../middlewares/checkTierVerification.js");
+// const {
+//   checkTierVerification,
+// // } = require("../middlewares/checkTierVerification.js");
 const User = require("../models/User");
 const advancedResults = require("../middlewares/advancedResults");
 const enforceMerchantUsdt = require("../middlewares/merchant");
@@ -60,14 +60,14 @@ router.post("/create-admin", createAdmin);
 router.get(
   "/:userId/transactions",
   protect,
-  checkTierVerification,
+  // checkTierVerification,
   enforceMerchantUsdt,
   getUserTransactions
 );
 router.get(
   "/transactions",
   protect,
-  checkTierVerification,
+  // checkTierVerification,
   enforceMerchantUsdt,
   getAllUserTransactions
 );
@@ -77,7 +77,7 @@ router.get(
   protect,
   authorize("user", "admin"),
   checkBlocked,
-  checkTierVerification,
+  // checkTierVerification,
   enforceMerchantUsdt,
   getUserTransaction
 );
@@ -98,7 +98,7 @@ router.post(
   protect,
   checkBlocked,
   authorize("user"),
-  checkTierVerification,
+  // checkTierVerification,
   enforceMerchantUsdt,
   addBeneficiary
 );
@@ -118,7 +118,7 @@ router.post(
 router.post(
   "/send-usdt",
   protect,
-  checkTierVerification,
+  // checkTierVerification,
   checkBlocked,
   authorize("user"),
   sendUSDT

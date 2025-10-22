@@ -73,7 +73,7 @@ exports.creditUserBalance = asyncHandler(async (req, res, next) => {
   try {
     await sendEmail(
       user.email,
-      "Credit Alert",
+      "Naira Credit Alert",
       "credit-alert", // View name
       {
         name: user.fullName,
@@ -177,8 +177,8 @@ exports.creditUSDBalance = asyncHandler(async (req, res, next) => {
   try {
     await sendEmail(
       user.email,
-      "Credit Alert",
-      "credit-alert", // View name
+      "Dollar Credit Alert",
+      "credit-alert-usd", // View name
       {
         name: user.fullName,
         amount: amount,
@@ -295,7 +295,7 @@ exports.getUserTransactions = asyncHandler(async (req, res, next) => {
   const user = await User.findById(userId);
   if (!user) return res.status(404).json({ message: "User not found" });
 
-  const [deposits, transfers, usdTrxs, transactions] = await Promise.all([
+  const [deposits, transfers, usdTrxs, otherTransactions] = await Promise.all([
     Deposit.find({ user: userId }).lean(),
     Transfer.find({ user: userId }).lean(),
     UsdTrx.find({ user: userId }).lean(),
@@ -336,7 +336,7 @@ exports.getUserTransactions = asyncHandler(async (req, res, next) => {
     createdAt: u.createdAt,
   }));
 
-  const formattedTransactions = transactions.map((t) => ({
+  const formattedTransactions = otherTransactions.map((t) => ({
     _id: t._id,
     type: t.type,
     amount: t.amount,
@@ -346,14 +346,14 @@ exports.getUserTransactions = asyncHandler(async (req, res, next) => {
   }));
 
   // 4️⃣ Merge and sort all transactions
-  const allTransactions = [
+  const transactions = [
     ...formattedDeposits,
     ...formattedTransfers,
     ...formattedUsdTrxs,
     ...formattedTransactions,
   ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-  res.json({ user, allTransactions });
+  res.json({ user, transactions });
 });
 
 // Get all users transactions for admin
