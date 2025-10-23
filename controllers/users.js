@@ -384,6 +384,28 @@ exports.getUserTransaction = asyncHandler(async (req, res, next) => {
     transaction = await Deposit.findById(transactionId);
   } else if (type === "transfer") {
     transaction = await Transfer.findById(transactionId);
+  } else if (type === "airtime") {
+    transaction = await Transaction.findOne({
+      _id: transactionId,
+      type: "airtime",
+    });
+  } else if (type === "data") {
+    transaction = await Transaction.findOne({
+      _id: transactionId,
+      type: "data",
+    });
+  } else if (type === "credit") {
+    transaction = await Transaction.findOne({
+      _id: transactionId,
+      type: "credit",
+    });
+  } else if (type === "debit") {
+    transaction = await Transaction.findOne({
+      _id: transactionId,
+      type: "debit",
+    });
+  } else if (type === "usd-trx") {
+    transaction = await UsdTrx.findById(transactionId);
   } else {
     return next(new ErrorResponse("Invalid transaction type", 400));
   }
