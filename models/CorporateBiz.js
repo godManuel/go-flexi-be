@@ -31,7 +31,7 @@ const corporateBiz = new mongoose.Schema(
         "solo-cooperative",
       ],
     },
-    cooperativeName: String,
+    corporativeName: String,
     certificateNumber: String,
     profileNumber: String,
     verificationCode: String,
