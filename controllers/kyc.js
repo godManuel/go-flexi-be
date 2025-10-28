@@ -240,13 +240,6 @@ exports.verifyCac = asyncHandler(async (req, res, next) => {
 });
 
 exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
-  // if (!req.file) {
-  //   return next(new ErrorResponse("No file uploaded", 400));
-  // }
-
-  // const filePath = `/uploads/${req.file.filename}`; // stored path for DB
-  // const absolutePath = path.join(__dirname, "..", "uploads", req.file.filename);
-
   const user = await User.findById(req.user.id);
   if (!user) {
     return next(new ErrorResponse("User not found", 404));
@@ -258,17 +251,20 @@ exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
     );
   }
 
-  if (user.accountBalance < 5000) {
-    return next(new ErrorResponse("Insufficient Funds", 400));
-  }
+  // Only require balance checks and deduction when user does NOT have a corporateBiz
+  const requiresDeduction = !user.corporateBiz;
 
-  if (user.accountBalance - 5500 < 5000) {
-    return next(new ErrorResponse("Insufficient Funds after deduction", 400));
+  if (requiresDeduction) {
+    if (user.accountBalance < 5000) {
+      return next(new ErrorResponse("Insufficient Funds", 400));
+    }
+
+    if (user.accountBalance - 5500 < 5000) {
+      return next(new ErrorResponse("Insufficient Funds after deduction", 400));
+    }
   }
 
   const { business_name, account_number, bank_name } = req.body;
-
-  // const bank_code = matchedBank.bankCode;
 
   const corporateBiz = await CorporateBiz.create({
     businessName: business_name,
@@ -289,13 +285,19 @@ exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
 
   await corporateBiz.save();
 
+  const updatePayload = {
+    corporateBiz: corporateBiz._id,
+    isKYC: "pending",
+  };
+
+  // Deduct only if user does not already have a corporateBiz
+  if (requiresDeduction) {
+    updatePayload.$inc = { accountBalance: -5500 };
+  }
+
   const updatedUser = await User.findByIdAndUpdate(
     req.user.id,
-    {
-      corporateBiz: corporateBiz._id,
-      isKYC: "pending",
-      $inc: { accountBalance: -5500 },
-    },
+    updatePayload,
     { new: true } // returns the updated user
   ).populate("corporateBiz");
 
