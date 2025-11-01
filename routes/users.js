@@ -36,7 +36,13 @@ const enforceMerchantUsdt = require("../middlewares/merchant");
 const router = express.Router();
 
 // Users endpoints (router 1 & 2: users, router 3: admin)
-router.get("/:id", protect, checkBlocked, getUser);
+router.get(
+  "/:id",
+  protect,
+  checkBlocked,
+  getUser,
+  advancedResults(User, { path: "corporateBiz" })
+);
 router.get(
   "/",
   protect,

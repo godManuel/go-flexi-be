@@ -10,33 +10,34 @@ exports.getCorporateBusinesses = asyncHandler(async (req, res, next) => {
 });
 
 exports.updateCorporateBusiness = asyncHandler(async (req, res, next) => {
-  const corporateBusinessId = req.params.id;
+  const { id } = req.params;
   const { action } = req.body;
 
   if (!action) {
     return next(new ErrorResponse("Action is required", 400));
   }
 
-  const corporateBusiness = await CorporateBiz.findById(corporateBusinessId);
+  // Find corporate business form
+  const corporateBusiness = await CorporateBiz.findById(id);
   if (!corporateBusiness) {
     return next(new ErrorResponse("Corporate business form not found", 404));
   }
-  console.log(corporateBusiness);
 
+  // Handle approval or decline
   if (action === "approve") {
     corporateBusiness.status = "verified";
-    await corporateBusiness.save();
-    // Generate unique 7-digit code and assign to user
+
+    // Generate unique 7-digit merchant code
+    let uniqueCode;
+    let codeExists;
     do {
       uniqueCode = Math.floor(1000000 + Math.random() * 9000000);
-      codeExists = await User.exists({
-        merchantVerificationCode: uniqueCode,
-      });
+      codeExists = await User.exists({ merchantVerificationCode: uniqueCode });
     } while (codeExists);
 
-    // Save the code to the user
-    await User.findByIdAndUpdate(
-      corporateBusiness.userId,
+    // Persist changes to user (ensure it saves correctly)
+    const updatedUser = await User.findByIdAndUpdate(
+      corporateBusiness.user, // make sure `userId` exists in CorporateBiz schema
       {
         $set: {
           merchantVerificationCode: uniqueCode,
@@ -44,49 +45,41 @@ exports.updateCorporateBusiness = asyncHandler(async (req, res, next) => {
           isKYC: "verified",
         },
       },
-      { new: true }
+      { new: true, runValidators: true }
     );
+
+    if (!updatedUser) {
+      return next(new ErrorResponse("Associated user not found", 404));
+    }
+
+    await corporateBusiness.save();
   } else if (action === "decline") {
     corporateBusiness.status = "declined";
     await corporateBusiness.save();
   } else {
     return next(new ErrorResponse("Invalid action", 400));
   }
-  await corporateBusiness.save();
 
   // Notify user
-  const user = await User.findById(corporateBusiness.user);
-  console.log(corporateBusiness);
-  if (!user) return next(new ErrorResponse("User not found!"));
+  const user = await User.findById(
+    corporateBusiness.userId || corporateBusiness.user
+  );
+  if (!user) return next(new ErrorResponse("User not found!", 404));
 
-  if (user) {
-    // await User.findByIdAndUpdate(
-    //   corporateBusiness.userId,
-    //   {
-    //     $set: {
-    //       isKYC: "verified",
-    //     },
-    //   },
-    //   { new: true }
-    // );
+  await sendEmail(
+    user.email,
+    `Corporate Business Form ${action === "approve" ? "Verified" : "Declined"}`,
+    "notification",
+    {
+      name: user.fullName,
+      message:
+        action === "approve"
+          ? "Your corporate business form has been approved."
+          : "Your corporate business form has been declined.",
+    }
+  );
 
-    await sendEmail(
-      user.email,
-      `Corporate Business Form ${
-        action === "approve" ? "Verified" : "Declined"
-      }`,
-      "notification",
-      {
-        name: user.fullName,
-        message:
-          action === "approve"
-            ? "Your corporate business form has been approved."
-            : "Your corporate business form has been declined.",
-      }
-    );
-  }
-
-  res.status(200).json({
+  return res.status(200).json({
     success: true,
     message: `Form ${action}d successfully`,
     corporateBusiness,
