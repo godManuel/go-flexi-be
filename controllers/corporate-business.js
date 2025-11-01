@@ -37,7 +37,11 @@ exports.updateCorporateBusiness = asyncHandler(async (req, res, next) => {
     // Save the code to the user
     await User.findByIdAndUpdate(
       corporateBusiness.userId,
-      { merchantVerificationCode: uniqueCode },
+      {
+        merchantVerificationCode: uniqueCode,
+        tier: "merchant",
+        isKYC: "verified",
+      },
       { new: true }
     );
   } else if (action === "decline") {
