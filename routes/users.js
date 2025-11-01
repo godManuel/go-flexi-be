@@ -40,8 +40,8 @@ router.get(
   "/:id",
   protect,
   checkBlocked,
-  getUser,
-  advancedResults(User, { path: "corporateBiz" })
+  advancedResults(User, { path: "corporateBiz" }),
+  getUser
 );
 router.get(
   "/",
