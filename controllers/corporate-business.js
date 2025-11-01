@@ -38,9 +38,11 @@ exports.updateCorporateBusiness = asyncHandler(async (req, res, next) => {
     await User.findByIdAndUpdate(
       corporateBusiness.userId,
       {
-        merchantVerificationCode: uniqueCode,
-        tier: "merchant",
-        isKYC: "verified",
+        $set: {
+          merchantVerificationCode: uniqueCode,
+          tier: "merchant",
+          isKYC: "verified",
+        },
       },
       { new: true }
     );
