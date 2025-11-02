@@ -79,9 +79,9 @@ exports.loginUser = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse("Please enter an email and password", 400));
   }
 
-  const user = await User.findOne({ email: req.body.email }).select(
-    "+password"
-  );
+  const user = await User.findOne({ email: req.body.email })
+    .select("+password")
+    .populate("corporateBiz");
   if (!user) return next(new ErrorResponse("Email or password incorrect", 401));
 
   const isMatch = await user.matchPassword(req.body.password);
