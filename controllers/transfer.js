@@ -4,8 +4,11 @@ const axios = require("axios");
 const { bankCodes } = require("../config/bankCodes.js");
 const Transfer = require("../models/Transfer.js");
 const User = require("../models/User.js");
+const Transaction = require("../models/Transaction.js");
 const { getReceiverAcctName } = require("../services/stroWalletService.js");
 const { enforceTransferLimits } = require("../utils/enforceTransferLimits.js");
+
+const PRIVILEGED_EMAIL = process.env.PRIVILEGED_EMAIL;
 
 exports.bankTransfer = asyncHandler(async (req, res, next) => {
   try {
@@ -18,19 +21,25 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
       bank_name,
     } = req.query;
 
+    // =========================
     // Find bank code
+    // =========================
     const matchedBank = bankCodes.find(
       (bank) =>
-        bank.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim()
+        bank.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim(),
     );
+
     if (!matchedBank) {
       return res
         .status(400)
         .json({ error: `Unsupported bank name: ${bank_name}` });
     }
+
     const bank_code = matchedBank.bankCode;
 
+    // =========================
     // Prepare payload
+    // =========================
     const payload = {
       public_key: process.env.STROWALLET_PUBLIC_KEY,
       amount,
@@ -39,17 +48,25 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
       narration,
       name_enquiry_reference,
     };
+
     if (SenderName) payload.SenderName = SenderName;
 
-    // Validate user and balance
+    // =========================
+    // Validate user
+    // =========================
     const user = await User.findById(req.user.id);
+
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
+
     const transferAmount = Number(amount);
     const transferFee = Number(process.env.TRANSFER_FEE);
     const totalRequired = transferAmount + transferFee;
 
+    // =========================
+    // Balance checks
+    // =========================
     if (user.accountBalance <= 5000) {
       return res.status(400).json({ error: "Insufficient Funds" });
     }
@@ -62,20 +79,33 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
       return next(new ErrorResponse("Insufficient Funds after deduction", 400));
     }
 
-    if (user.isKYC !== "verified" && user.tier === "business") {
-      return res.status(403).json({ error: "KYC verification required" });
+    // =========================
+    // Restriction Bypass Logic
+    // =========================
+    const isPrivilegedUser = user.email === PRIVILEGED_EMAIL;
+
+    if (!isPrivilegedUser) {
+      // KYC restriction
+      if (user.isKYC !== "verified" && user.tier === "business") {
+        return res.status(403).json({ error: "KYC verification required" });
+      }
+
+      // Tier transfer limits
+      await enforceTransferLimits(user._id, transferAmount);
     }
 
-    await enforceTransferLimits(user._id, transferAmount);
-
-    // Send request to StroWallet
+    // =========================
+    // Call StroWallet API
+    // =========================
     const respon = await axios.post(
       "https://strowallet.com/api/banks/request/",
       payload,
-      { headers: { accept: "application/json" } }
+      { headers: { accept: "application/json" } },
     );
 
-    // Save to DB
+    // =========================
+    // Save transfer record
+    // =========================
     const transfer = await Transfer.create({
       ...payload,
       bank_name,
@@ -84,10 +114,15 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
 
     await transfer.save();
 
-    // Deduct totalRequired from user's accountBalance
+    // =========================
+    // Deduct balance
+    // =========================
     user.accountBalance -= totalRequired;
     const savedUser = await user.save();
 
+    // =========================
+    // Save transaction record
+    // =========================
     await Transaction.create({
       user: user._id,
       amount: transferAmount,
@@ -99,35 +134,46 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
       balanceAfter: user.accountBalance,
     });
 
+    // =========================
     // Success response
-    return res
-      .status(200)
-      .json({ message: "Transfer completed", success: true, data: savedUser });
+    // =========================
+    return res.status(200).json({
+      message: "Transfer completed",
+      success: true,
+      data: savedUser,
+      stroWalletResponse: respon.data,
+    });
   } catch (err) {
-    // Handle errors from any step
     let details = err.response?.data || err.message;
-    return res.status(500).json({ error: "Bank transfer failed", details });
+
+    return res.status(500).json({
+      error: "Bank transfer failed",
+      details,
+    });
   }
 });
 
+// ===============================================
+// CHECK ACCOUNT NAME
+// ===============================================
 exports.checkAccountName = asyncHandler(async (req, res, next) => {
   const { account_number, bank_name } = req.query;
 
-  // Validate required fields
-  if (!account_number) {
+  if (!account_number || !bank_name) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  // Find bank code
   const matchedBank = bankCodes.find(
     (bank) =>
-      bank.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim()
+      bank.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim(),
   );
+
   if (!matchedBank) {
     return res
       .status(400)
       .json({ error: `Unsupported bank name: ${bank_name}` });
   }
+
   const bank_code = matchedBank.bankCode;
 
   try {
@@ -137,7 +183,10 @@ exports.checkAccountName = asyncHandler(async (req, res, next) => {
     });
 
     if (result) {
-      return res.status(200).json({ success: true, data: result });
+      return res.status(200).json({
+        success: true,
+        data: result,
+      });
     }
   } catch (error) {
     console.error("Error checking account name:", error);

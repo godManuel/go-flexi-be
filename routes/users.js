@@ -41,14 +41,14 @@ router.get(
   protect,
   checkBlocked,
   advancedResults(User, { path: "corporateBiz" }),
-  getUser
+  getUser,
 );
 router.get(
   "/",
   protect,
   authorize("admin"),
   advancedResults(User, { path: "corporateBiz" }),
-  getAllUsers
+  getAllUsers,
 );
 router.post("/user", protect, authorize("admin"), getUserByEmail);
 
@@ -68,14 +68,14 @@ router.get(
   protect,
   // checkTierVerification,
   enforceMerchantUsdt,
-  getUserTransactions
+  getUserTransactions,
 );
 router.get(
   "/transactions",
   protect,
   // checkTierVerification,
   enforceMerchantUsdt,
-  getAllUserTransactions
+  getAllUserTransactions,
 );
 
 router.get(
@@ -85,7 +85,7 @@ router.get(
   checkBlocked,
   // checkTierVerification,
   enforceMerchantUsdt,
-  getUserTransaction
+  getUserTransaction,
 );
 
 // Notification endpoints (All routers are admin only)
@@ -93,7 +93,7 @@ router.post(
   "/notify-all",
   protect,
   authorize("admin"),
-  sendNotificationToUsers
+  sendNotificationToUsers,
 );
 
 router.post("/notify", sendNotificationToUser);
@@ -106,7 +106,7 @@ router.post(
   authorize("user"),
   // checkTierVerification,
   enforceMerchantUsdt,
-  addBeneficiary
+  addBeneficiary,
 );
 
 router.put("/:id/block", protect, authorize("admin"), blockUser);
@@ -118,7 +118,7 @@ router.post(
   protect,
   checkBlocked,
   authorize("user"),
-  createUSDTAddress
+  createUSDTAddress,
 );
 
 router.post(
@@ -127,7 +127,7 @@ router.post(
   // checkTierVerification,
   checkBlocked,
   authorize("user"),
-  sendUSDT
+  sendUSDT,
 );
 
 router.post(
@@ -135,7 +135,7 @@ router.post(
   protect,
   checkBlocked,
   authorize("user"),
-  depositUSD
+  depositUSD,
 );
 
 router.get(
@@ -143,7 +143,7 @@ router.get(
   protect,
   authorize("user"),
   checkBlocked,
-  checkUSDTStatus
+  checkUSDTStatus,
 );
 
 router.post(
@@ -152,7 +152,7 @@ router.post(
   authorize("user"),
   checkBlocked,
   checkUSDTStatus,
-  addNumbers
+  addNumbers,
 );
 
 // router.post("/get-net-amount", getNetAmount);
