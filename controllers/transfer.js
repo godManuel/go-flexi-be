@@ -8,8 +8,6 @@ const Transaction = require("../models/Transaction.js");
 const { getReceiverAcctName } = require("../services/stroWalletService.js");
 const { enforceTransferLimits } = require("../utils/enforceTransferLimits.js");
 
-const PRIVILEGED_EMAIL = process.env.PRIVILEGED_EMAIL;
-
 exports.bankTransfer = asyncHandler(async (req, res, next) => {
   try {
     const {
@@ -79,20 +77,12 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
       return next(new ErrorResponse("Insufficient Funds after deduction", 400));
     }
 
-    // =========================
-    // Restriction Bypass Logic
-    // =========================
-    const isPrivilegedUser = user.email === PRIVILEGED_EMAIL;
-
-    if (!isPrivilegedUser) {
-      // KYC restriction
-      if (user.isKYC !== "verified" && user.tier === "business") {
-        return res.status(403).json({ error: "KYC verification required" });
-      }
-
-      // Tier transfer limits
-      await enforceTransferLimits(user._id, transferAmount);
+    if (user.isKYC !== "verified" && user.tier === "business") {
+      return res.status(403).json({ error: "KYC verification required" });
     }
+
+    // Tier transfer limits
+    await enforceTransferLimits(user._id, transferAmount);
 
     // =========================
     // Call StroWallet API
@@ -153,9 +143,131 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
   }
 });
 
-// ===============================================
-// CHECK ACCOUNT NAME
-// ===============================================
+exports.adminBankTransfer = asyncHandler(async (req, res, next) => {
+  try {
+    const {
+      amount,
+      account_number,
+      narration,
+      name_enquiry_reference,
+      SenderName,
+      bank_name,
+      userId, // Admin specifies which user balance to debit
+    } = req.body;
+
+    /* =========================
+       Verify Admin Access
+    ========================== */
+    if (!req.user || req.user.role !== "admin") {
+      return res.status(403).json({ error: "Unauthorized access" });
+    }
+
+    /* =========================
+       Find Bank Code
+    ========================== */
+    const matchedBank = bankCodes.find(
+      (bank) =>
+        bank.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim(),
+    );
+
+    if (!matchedBank) {
+      return res
+        .status(400)
+        .json({ error: `Unsupported bank name: ${bank_name}` });
+    }
+
+    const bank_code = matchedBank.bankCode;
+
+    /* =========================
+       Prepare Payload
+    ========================== */
+    const payload = {
+      public_key: process.env.STROWALLET_PUBLIC_KEY,
+      amount,
+      bank_code,
+      account_number,
+      narration,
+      name_enquiry_reference,
+    };
+
+    if (SenderName) payload.SenderName = SenderName;
+
+    /* =========================
+       Find Target User
+    ========================== */
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "Target user not found" });
+    }
+
+    const transferAmount = Number(amount);
+    const transferFee = Number(process.env.TRANSFER_FEE || 0);
+    const totalRequired = transferAmount + transferFee;
+
+    /* =========================
+       Simple Balance Check (Only ensure enough funds)
+    ========================== */
+    if (user.accountBalance < totalRequired) {
+      return res.status(400).json({ error: "Insufficient balance" });
+    }
+
+    /* =========================
+       Call StroWallet API
+    ========================== */
+    const respon = await axios.post(
+      "https://strowallet.com/api/banks/request/",
+      payload,
+      { headers: { accept: "application/json" } },
+    );
+
+    /* =========================
+       Save Transfer Record
+    ========================== */
+    const transfer = await Transfer.create({
+      ...payload,
+      bank_name,
+      user: req.user.id,
+    });
+
+    /* =========================
+       Deduct Balance
+    ========================== */
+    user.accountBalance -= totalRequired;
+    const savedUser = await user.save();
+
+    /* =========================
+       Save Transaction Record
+    ========================== */
+    await Transaction.create({
+      user: user._id,
+      amount: transferAmount,
+      type: "transfer",
+      description: `Admin withdrawal to ${bank_name} - ${account_number}`,
+      transfer: transfer._id,
+      balanceAfter: user.accountBalance,
+      performedBy: req.user._id,
+    });
+
+    /* =========================
+       Success Response
+    ========================== */
+    return res.status(200).json({
+      message: "Admin transfer completed successfully",
+      success: true,
+      data: savedUser,
+      stroWalletResponse: respon.data,
+    });
+  } catch (err) {
+    let details = err.response?.data || err.message;
+
+    return res.status(500).json({
+      error: "Admin bank transfer failed",
+      details,
+    });
+  }
+});
+
 exports.checkAccountName = asyncHandler(async (req, res, next) => {
   const { account_number, bank_name } = req.query;
 

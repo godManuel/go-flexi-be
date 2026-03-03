@@ -1,5 +1,6 @@
 const { verifySessionId } = require("../services/stroWalletService");
 const User = require("../models/User");
+const Transaction = require("../models/Transaction");
 const Deposit = require("../models/Deposit");
 const ErrorResponse = require("../utils/errorResponse");
 const { calcNetAmount } = require("../utils/calcNetAmount");
@@ -28,7 +29,7 @@ exports.stroWallet = asyncHandler(async (req, res, next) => {
   try {
     const verificationData = await verifySessionId(
       transactionAmount,
-      sessionId
+      sessionId,
     );
     console.log("Verification:", verificationData);
 
@@ -58,13 +59,13 @@ exports.stroWallet = asyncHandler(async (req, res, next) => {
       const { netAmount } = calcNetAmount(deposit.settledAmount);
 
       const newAcctBal = (parseFloat(user.accountBalance) + netAmount).toFixed(
-        2
+        2,
       );
 
       const updatedUser = await User.findOneAndUpdate(
         { _id: user.id },
         { $set: { accountBalance: newAcctBal } },
-        { new: true }
+        { new: true },
       );
 
       await Transaction.create({
@@ -91,7 +92,7 @@ exports.stroWallet = asyncHandler(async (req, res, next) => {
             amount: netAmount,
             date: new Date(deposit.tranDateTime).toLocaleDateString(),
             balance: newAcctBal,
-          }
+          },
         );
       } catch (error) {
         console.error("Failed to send credit alert email:", error);
@@ -108,8 +109,8 @@ exports.stroWallet = asyncHandler(async (req, res, next) => {
     const apiError = error.response?.data || error.message;
     return next(
       new ErrorResponse(
-        `StroWallet session verification failed: ${JSON.stringify(apiError)}`
-      )
+        `StroWallet session verification failed: ${JSON.stringify(apiError)}`,
+      ),
     );
   }
 });

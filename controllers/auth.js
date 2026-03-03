@@ -25,14 +25,14 @@ exports.createUser = asyncHandler(async (req, res, next) => {
 
     // Call StroWallet API
     const response = await axios.post(
-      "https://strowallet.com/api/virtual-bank/amucha/",
+      "https://strowallet.com/api/virtual-bank/new-customer//",
       payload,
       {
         headers: {
           Authorization: `Bearer ${process.env.STROWALLET_PUBLIC_KEY}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     const result = response.data;
@@ -68,7 +68,7 @@ exports.createUser = asyncHandler(async (req, res, next) => {
   } catch (error) {
     console.error(
       "Error sending request to StroWallet:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     return next(new ErrorResponse("Failed to create virtual account", 500));
   }
@@ -203,7 +203,7 @@ exports.resetPassword = asyncHandler(async (req, res, next) => {
   const { email, newPassword } = req.body;
   if (!email || !newPassword) {
     return next(
-      new ErrorResponse("Please provide email and new password", 400)
+      new ErrorResponse("Please provide email and new password", 400),
     );
   }
 
