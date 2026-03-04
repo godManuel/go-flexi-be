@@ -103,7 +103,7 @@ router.post(
   "/add-beneficiary",
   protect,
   checkBlocked,
-  authorize("user"),
+  authorize("user", "admin"),
   // checkTierVerification,
   enforceMerchantUsdt,
   addBeneficiary,
