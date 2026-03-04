@@ -195,11 +195,7 @@ exports.adminBankTransfer = asyncHandler(async (req, res, next) => {
     /* =========================
        Find Target User
     ========================== */
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(404).json({ error: "Target user not found" });
-    }
+    const user = await User.findById(req.user.id);
 
     const transferAmount = Number(amount);
     const transferFee = Number(process.env.TRANSFER_FEE || 0);
