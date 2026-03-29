@@ -25,7 +25,7 @@ exports.createUser = asyncHandler(async (req, res, next) => {
 
     // Call StroWallet API
     const response = await axios.post(
-      "https://strowallet.com/api/virtual-bank/safehaven",
+      "https://strowallet.com/api/virtual-bank/palmpay",
       payload,
       {
         headers: {
@@ -66,10 +66,7 @@ exports.createUser = asyncHandler(async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error(
-      "Error sending request to StroWallet:",
-      error.response?.data || error.message,
-    );
+    console.error("Error sending request to StroWallet:", error);
     return next(new ErrorResponse("Failed to create virtual account", 500));
   }
 });
