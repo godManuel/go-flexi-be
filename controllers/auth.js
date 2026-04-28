@@ -25,7 +25,7 @@ exports.createUser = asyncHandler(async (req, res, next) => {
 
     // Call StroWallet API
     const response = await axios.post(
-      "https://strowallet.com/api/virtual-bank/palmpay",
+      "https://strowallet.com/api/virtual-bank/amucha",
       payload,
       {
         headers: {
@@ -40,6 +40,7 @@ exports.createUser = asyncHandler(async (req, res, next) => {
     // If StroWallet fails, stop the process
     if (!result.success) {
       return next(new ErrorResponse(result.message || "StroWallet error", 400));
+      console.log("StroWallet API error:", result);
     }
 
     // Now create the user in the database
