@@ -40,6 +40,45 @@ exports.getAllTransactions = asyncHandler(async (req, res, next) => {
     .json({ success: true, count: combined.length, data: combined });
 });
 
+exports.getTransactionById = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  let transaction = await Deposit.findById(id).lean();
+  let type = "deposit";
+
+  if (!transaction) {
+    transaction = await Transfer.findById(id).lean();
+    type = "transfer";
+  }
+
+  if (!transaction) {
+    transaction = await Transaction.findById(id).lean();
+    type = transaction ? transaction.type : null;
+  }
+
+  if (!transaction) {
+    transaction = await UsdTrx.findById(id).lean();
+    type = "usd_transaction";
+  }
+
+  if (!transaction) {
+    return next(new ErrorResponse("Transaction not found", 404));
+  }
+
+  const transactionUserId =
+    transaction.user?._id?.toString?.() || transaction.user?.toString?.();
+
+  if (req.user.role !== "admin" && req.user.id !== transactionUserId) {
+    return next(
+      new ErrorResponse("Not allowed to access this transaction", 403),
+    );
+  }
+
+  return res
+    .status(200)
+    .json({ success: true, data: { ...transaction, type } });
+});
+
 exports.getUserTransactions = asyncHandler(async (req, res, next) => {
   const { userId } = req.params;
 
@@ -107,12 +146,10 @@ exports.getUserTransactions = asyncHandler(async (req, res, next) => {
     ...formattedTransactions,
   ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-  return res
-    .status(200)
-    .json({
-      success: true,
-      user,
-      count: transactions.length,
-      data: transactions,
-    });
+  return res.status(200).json({
+    success: true,
+    user,
+    count: transactions.length,
+    data: transactions,
+  });
 });

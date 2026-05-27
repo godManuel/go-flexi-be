@@ -113,7 +113,7 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
     // =========================
     // Save transaction record
     // =========================
-    await Transaction.create({
+    const transaction = await Transaction.create({
       user: user._id,
       amount: transferAmount,
       type: "transfer",
@@ -124,13 +124,16 @@ exports.bankTransfer = asyncHandler(async (req, res, next) => {
       balanceAfter: user.accountBalance,
     });
 
+    user.transactions.push(transaction._id);
+    const updatedUser = await user.save();
+
     // =========================
     // Success response
     // =========================
     return res.status(200).json({
       message: "Transfer completed",
       success: true,
-      data: savedUser,
+      data: updatedUser,
       stroWalletResponse: respon.data,
     });
   } catch (err) {
@@ -235,7 +238,7 @@ exports.adminBankTransfer = asyncHandler(async (req, res, next) => {
     /* =========================
        Save Transaction Record
     ========================== */
-    await Transaction.create({
+    const transaction = await Transaction.create({
       user: user._id,
       amount: transferAmount,
       type: "transfer",
@@ -245,13 +248,16 @@ exports.adminBankTransfer = asyncHandler(async (req, res, next) => {
       performedBy: req.user._id,
     });
 
+    user.transactions.push(transaction._id);
+    const updatedUser = await user.save();
+
     /* =========================
        Success Response
-    ========================== */
+    ========================= */
     return res.status(200).json({
       message: "Admin transfer completed successfully",
       success: true,
-      data: savedUser,
+      data: updatedUser,
       stroWalletResponse: respon.data,
     });
   } catch (err) {

@@ -68,7 +68,7 @@ exports.stroWallet = asyncHandler(async (req, res, next) => {
         { new: true },
       );
 
-      await Transaction.create({
+      const transaction = await Transaction.create({
         user: user._id,
         type: "deposit",
         amount: +netAmount,
@@ -78,7 +78,7 @@ exports.stroWallet = asyncHandler(async (req, res, next) => {
         date: deposit.tranDateTime,
       });
 
-      user.transactions.push(deposit._id);
+      user.transactions.push(transaction._id);
       await user.save();
 
       // Send credit alert email
