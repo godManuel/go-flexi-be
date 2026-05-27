@@ -36,7 +36,7 @@ exports.getAllUsers = asyncHandler(async (req, res, next) => {
 
 exports.getUserByEmail = asyncHandler(async (req, res, next) => {
   const user = await User.findOne({ email: req.body.email }).select(
-    "-password"
+    "-password",
   );
   if (!user) return next(new ErrorResponse("User does not exist", 404));
 
@@ -80,7 +80,7 @@ exports.creditUserBalance = asyncHandler(async (req, res, next) => {
         amount: amount,
         date: new Date().toLocaleDateString(),
         balance: user.accountBalance,
-      }
+      },
     );
   } catch (error) {
     console.error("Failed to send credit alert email:", error);
@@ -134,7 +134,7 @@ exports.debitUserBalance = asyncHandler(async (req, res, next) => {
         amount: amount,
         date: new Date().toLocaleDateString(),
         balance: user.accountBalance,
-      }
+      },
     );
   } catch (error) {
     console.error("Failed to send debit alert email:", error);
@@ -184,7 +184,7 @@ exports.creditUSDBalance = asyncHandler(async (req, res, next) => {
         amount: amount,
         date: new Date().toLocaleDateString(),
         balance: user.usdtBalance,
-      }
+      },
     );
   } catch (error) {
     console.error("Failed to send credit alert email:", error);
@@ -238,7 +238,7 @@ exports.debitUSDBalance = asyncHandler(async (req, res, next) => {
         amount: amount,
         date: new Date().toLocaleDateString(),
         balance: user.usdtBalance,
-      }
+      },
     );
   } catch (error) {
     console.error("Failed to send debit alert email:", error);
@@ -260,7 +260,7 @@ exports.createAdmin = asyncHandler(async (req, res, next) => {
   const { email, fullName, password } = req.body;
   if (!email || !fullName || !password) {
     return next(
-      new ErrorResponse("Email, full name and password are required", 400)
+      new ErrorResponse("Email, full name and password are required", 400),
     );
   }
 
@@ -288,144 +288,12 @@ exports.createAdmin = asyncHandler(async (req, res, next) => {
   });
 });
 
-// Get transactions for a user
-exports.getUserTransactions = asyncHandler(async (req, res, next) => {
-  const { userId } = req.params;
-
-  const user = await User.findById(userId);
-  if (!user) return res.status(404).json({ message: "User not found" });
-
-  const [deposits, transfers, usdTrxs, otherTransactions] = await Promise.all([
-    Deposit.find({ user: userId }).lean(),
-    Transfer.find({ user: userId }).lean(),
-    UsdTrx.find({ user: userId }).lean(),
-    Transaction.find({
-      user: userId,
-      type: { $in: ["data", "airtime", "credit", "debit"] },
-    }).lean(),
-  ]);
-
-  // Format deposits with fee calculation
-  const formattedDeposits = deposits.map((d) => {
-    const { netAmount, totalFee } = calcNetAmount(d.settledAmount); // use your fee function
-
-    return {
-      _id: d._id,
-      type: "deposit",
-      grossAmount: d.amount,
-      netAmount,
-      feeCharged: totalFee,
-      createdAt: d.createdAt,
-    };
-  });
-
-  const formattedTransfers = transfers.map((t) => ({
-    _id: t._id,
-    type: "transfer",
-    amount: t.amount,
-    to: t.to,
-    createdAt: t.createdAt,
-  }));
-
-  const formattedUsdTrxs = usdTrxs.map((u) => ({
-    _id: u._id,
-    type: "usd_transaction",
-    amount: u.amount,
-    currency: u.currency || "USD",
-    description: u.description || "USD Transaction",
-    createdAt: u.createdAt,
-  }));
-
-  const formattedTransactions = otherTransactions.map((t) => ({
-    _id: t._id,
-    type: t.type,
-    amount: t.amount,
-    status: t.status,
-    description: t.description || `${t.type} transaction`,
-    createdAt: t.createdAt,
-  }));
-
-  // 4️⃣ Merge and sort all transactions
-  const transactions = [
-    ...formattedDeposits,
-    ...formattedTransfers,
-    ...formattedUsdTrxs,
-    ...formattedTransactions,
-  ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-  res.json({ user, transactions });
-});
-
-// Get all users transactions for admin
-exports.getAllUserTransactions = asyncHandler(async (req, res, next) => {
-  const users = await User.find().populate("transactions");
-  if (!users || users.length === 0) {
-    return next(new ErrorResponse("No users found", 404));
-  }
-
-  const allTransactions = users.flatMap((user) => ({
-    userId: user.id,
-    transactions: user.transactions,
-  }));
-
-  res.status(200).json({
-    success: true,
-    transactions: allTransactions,
-  });
-});
-
-exports.getUserTransaction = asyncHandler(async (req, res, next) => {
-  const { transactionId } = req.params;
-
-  const { type } = req.query;
-
-  let transaction;
-  if (type === "deposit") {
-    transaction = await Deposit.findById(transactionId);
-  } else if (type === "transfer") {
-    transaction = await Transfer.findById(transactionId);
-  } else if (type === "airtime") {
-    transaction = await Transaction.findOne({
-      _id: transactionId,
-      type: "airtime",
-    });
-  } else if (type === "data") {
-    transaction = await Transaction.findOne({
-      _id: transactionId,
-      type: "data",
-    });
-  } else if (type === "credit") {
-    transaction = await Transaction.findOne({
-      _id: transactionId,
-      type: "credit",
-    });
-  } else if (type === "debit") {
-    transaction = await Transaction.findOne({
-      _id: transactionId,
-      type: "debit",
-    });
-  } else if (type === "usd-trx") {
-    transaction = await UsdTrx.findById(transactionId);
-  } else {
-    return next(new ErrorResponse("Invalid transaction type", 400));
-  }
-
-  if (!transaction) {
-    return next(new ErrorResponse("Transaction not found", 404));
-  }
-
-  res.status(200).json({
-    success: true,
-    transaction,
-  });
-});
-
 exports.sendNotificationToUser = asyncHandler(async (req, res, next) => {
   const { email, subject, message } = req.body;
 
   if (!email || !subject || !message) {
     return next(
-      new ErrorResponse("Email, subject, and message are required", 400)
+      new ErrorResponse("Email, subject, and message are required", 400),
     );
   }
 
@@ -440,7 +308,7 @@ exports.sendNotificationToUser = asyncHandler(async (req, res, next) => {
       {
         name: user.fullName,
         message,
-      }
+      },
     );
 
     res.status(200).json({
@@ -466,7 +334,7 @@ exports.sendNotificationToUsers = asyncHandler(async (req, res, next) => {
     sendEmail(user.email, subject, "notification", {
       name: user.fullName,
       message,
-    })
+    }),
   );
 
   try {
@@ -505,7 +373,7 @@ exports.addBeneficiary = asyncHandler(async (req, res, next) => {
     user.beneficiaries.some(
       (b) =>
         b.accountNumber === account_number &&
-        b.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim()
+        b.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim(),
     )
   ) {
     return res.status(400).json({
@@ -518,7 +386,7 @@ exports.addBeneficiary = asyncHandler(async (req, res, next) => {
   // Find bank code
   const matchedBank = bankCodes.find(
     (bank) =>
-      bank.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim()
+      bank.bankName.toLowerCase().trim() === bank_name.toLowerCase().trim(),
   );
   if (!matchedBank) {
     return res.status(400).json({
@@ -577,7 +445,7 @@ exports.blockUser = asyncHandler(async (req, res, next) => {
         isBlocked: true,
       },
     },
-    { new: true }
+    { new: true },
   );
 
   res.json({ success: true, message: "User blocked successfully", user });
@@ -596,7 +464,7 @@ exports.unblockUser = asyncHandler(async (req, res, next) => {
         isBlocked: false,
       },
     },
-    { new: true }
+    { new: true },
   );
 
   res.json({ success: true, message: "User unblocked successfully", user });
@@ -655,8 +523,8 @@ exports.depositUSD = asyncHandler(async (req, res, next) => {
     return next(
       new ErrorResponse(
         "Your account balance cannot go below 5000 NGN after this transaction",
-        400
-      )
+        400,
+      ),
     );
   }
 
@@ -823,8 +691,8 @@ exports.sendUSDT = asyncHandler(async (req, res, next) => {
     return next(
       new ErrorResponse(
         "Your account balance cannot go below 5000 NGN after this transaction",
-        400
-      )
+        400,
+      ),
     );
   }
 
@@ -845,7 +713,7 @@ exports.sendUSDT = asyncHandler(async (req, res, next) => {
     if (!result) {
       // Refund user if USDT send fails
       return next(
-        new ErrorResponse(result?.message || "Failed to send USDT", 500)
+        new ErrorResponse(result?.message || "Failed to send USDT", 500),
       );
     }
 

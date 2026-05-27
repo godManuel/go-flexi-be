@@ -6,8 +6,6 @@ const {
   creditUserBalance,
   debitUserBalance,
   createAdmin,
-  getUserTransactions,
-  getAllUserTransactions,
   sendNotificationToUsers,
   sendNotificationToUser,
   getNetAmount,
@@ -19,7 +17,6 @@ const {
   sendUSDT,
   depositUSD,
   checkUSDTStatus,
-  getUserTransaction,
   creditUSDBalance,
   debitUSDBalance,
   addNumbers,
@@ -62,32 +59,6 @@ router.put("/debit-usd", protect, authorize("admin"), debitUSDBalance);
 // Admin endpoint (For superadmin)
 router.post("/create-admin", createAdmin);
 
-// Transactions endpoints (router 1: user, router 2: admin)
-router.get(
-  "/:userId/transactions",
-  protect,
-  // checkTierVerification,
-  enforceMerchantUsdt,
-  getUserTransactions,
-);
-router.get(
-  "/transactions",
-  protect,
-  // checkTierVerification,
-  enforceMerchantUsdt,
-  getAllUserTransactions,
-);
-
-router.get(
-  "/transactions/:transactionId",
-  protect,
-  authorize("user", "admin"),
-  checkBlocked,
-  // checkTierVerification,
-  enforceMerchantUsdt,
-  getUserTransaction,
-);
-
 // Notification endpoints (All routers are admin only)
 router.post(
   "/notify-all",
@@ -121,14 +92,7 @@ router.post(
   createUSDTAddress,
 );
 
-router.post(
-  "/send-usdt",
-  protect,
-  // checkTierVerification,
-  checkBlocked,
-  authorize("user"),
-  sendUSDT,
-);
+router.post("/send-usdt", protect, checkBlocked, authorize("user"), sendUSDT);
 
 router.post(
   "/deposit-usd",
