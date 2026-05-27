@@ -12,6 +12,7 @@ const app = express();
 const auth = require("./routes/auth");
 const webhooks = require("./routes/webhooks");
 const transfer = require("./routes/transfer");
+const transactions = require("./routes/transactions");
 const users = require("./routes/users");
 const kyc = require("./routes/kyc");
 const data = require("./routes/data");
@@ -51,10 +52,15 @@ app.use(helmet());
 // Prevent HTTP Parameter attacks
 app.use(hpp());
 
-// Mount routes
+/*
+|--------------------------------------------------------------------------
+| Existing Internal Routes
+|--------------------------------------------------------------------------
+*/
 app.use("/auth", auth);
 app.use("/webhooks", webhooks);
 app.use("/transfer", transfer);
+app.use("/transactions", transactions);
 app.use("/users", users);
 app.use("/kyc", kyc);
 app.use("/data", data);
@@ -63,6 +69,14 @@ app.use("/cable-subscription", cableTv);
 app.use("/electricity", electricity);
 app.use("/virtual-card", virtualCard);
 app.use("/corporate-businesses", corporateBusiness);
+
+/*
+|--------------------------------------------------------------------------
+| Developer API
+|--------------------------------------------------------------------------
+*/
+app.use("/developer", require("./routes/developer"));
+app.use("/developer/v1", require("./routes/public-api"));
 
 // Mount Built-in middlewares
 app.use(notFound);
