@@ -76,7 +76,6 @@ router.post(
   checkBlocked,
   authorize("user", "admin"),
   // checkTierVerification,
-  enforceMerchantUsdt,
   addBeneficiary,
 );
 
