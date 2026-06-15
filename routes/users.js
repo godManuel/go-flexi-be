@@ -79,6 +79,7 @@ router.post(
   addBeneficiary,
 );
 
+
 router.put("/:id/block", protect, authorize("admin"), blockUser);
 
 router.put("/:id/unblock", protect, authorize("admin"), unblockUser);

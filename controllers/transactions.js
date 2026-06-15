@@ -24,6 +24,7 @@ exports.getAllTransactions = asyncHandler(async (req, res, next) => {
 
   const mappedDeposits = deposits.map((d) => ({
     id: d._id,
+    sesionId: d.sessionId,
     type: "deposit",
     amount: d.transactionAmount || d.settledAmount || d.transactionAmount,
     accountNumber: d.accountNumber,
@@ -110,6 +111,7 @@ exports.getUserTransactions = asyncHandler(async (req, res, next) => {
     accountNumber: d.accountNumber,
     sourceBankName: d.sourceBankName,
     createdAt: d.createdAt,
+    sessionId: d.sessionId,
   }));
 
   const formattedTransfers = transfers.map((t) => ({
