@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const {
+  addCooperative,
   getCorporateBusinesses,
   updateCorporateBusiness,
 } = require("../controllers/corporate-business");
