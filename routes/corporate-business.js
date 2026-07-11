@@ -8,7 +8,7 @@ const { protect, authorize } = require("../middlewares/auth");
 const advancedResults = require("../middlewares/advancedResults");
 const CorporateBiz = require("../models/CorporateBiz");
 
-router.post("/add", protect, authorize("user"), addCooperative);
+router.post("/", protect, authorize("user"), addCooperative);
 
 router.get(
   "/",
