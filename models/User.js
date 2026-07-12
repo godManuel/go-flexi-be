@@ -105,6 +105,12 @@ const userSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "CorporateBiz",
     },
+    cooperatives: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "CorporateBiz",
+      },
+    ],
     dailyTransferLimit: { type: Number, default: 0 },
     monthlyTransferLimit: { type: Number, default: 0 },
 
@@ -131,7 +137,7 @@ const userSchema = new mongoose.Schema(
       default: 0,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 /* TASK -> Encrypt user password */
@@ -178,7 +184,7 @@ userSchema.methods.getSignedToken = function () {
     process.env.JWT_SECRET,
     {
       expiresIn: process.env.JWT_EXPIRY,
-    }
+    },
   );
 };
 

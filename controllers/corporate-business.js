@@ -5,6 +5,23 @@ const { sendEmail } = require("../utils/sendEmail");
 const CorporateBiz = require("../models/CorporateBiz.js");
 const User = require("../models/User.js");
 
+// POST /api/corporate-biz/add
+exports.addCooperative = asyncHandler(async (req, res, next) => {
+  const user = await User.findById(req.user.id);
+
+  const cooperative = await CorporateBiz.create({
+    ...req.body,
+    user: user._id,
+    purpose: "additional",
+    status: "verified",
+  });
+
+  user.cooperatives.push(cooperative._id);
+  await user.save();
+
+  res.status(201).json({ success: true, data: cooperative });
+});
+
 exports.getCorporateBusinesses = asyncHandler(async (req, res, next) => {
   res.status(200).json(res.advancedResults);
 });
@@ -45,7 +62,7 @@ exports.updateCorporateBusiness = asyncHandler(async (req, res, next) => {
           isKYC: "verified",
         },
       },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     if (!updatedUser) {
@@ -62,7 +79,7 @@ exports.updateCorporateBusiness = asyncHandler(async (req, res, next) => {
 
   // Notify user
   const user = await User.findById(
-    corporateBusiness.userId || corporateBusiness.user
+    corporateBusiness.userId || corporateBusiness.user,
   );
   if (!user) return next(new ErrorResponse("User not found!", 404));
 
@@ -76,7 +93,7 @@ exports.updateCorporateBusiness = asyncHandler(async (req, res, next) => {
         action === "approve"
           ? "Your corporate business form has been approved."
           : "Your corporate business form has been declined.",
-    }
+    },
   );
 
   return res.status(200).json({

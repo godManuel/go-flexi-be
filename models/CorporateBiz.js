@@ -22,6 +22,11 @@ const corporateBiz = new mongoose.Schema(
       enum: ["unverified", "verified", "declined", "pending"],
       default: "unverified",
     },
+    purpose: {
+      type: String,
+      enum: ["upgrade", "additional"],
+      default: "upgrade",
+    },
     cooperativeType: {
       type: String,
       enum: [
@@ -39,7 +44,7 @@ const corporateBiz = new mongoose.Schema(
     chairmanDetails: personnelSchema,
     secretaryDetails: personnelSchema,
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const CorporateBiz = mongoose.model("CorporateBiz", corporateBiz);

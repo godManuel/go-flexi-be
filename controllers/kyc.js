@@ -35,8 +35,8 @@ exports.verifyBvn = asyncHandler(async (req, res, next) => {
       return next(
         new ErrorResponse(
           error.response.data.message || "Strowallet verification failed",
-          error.response.status || 500
-        )
+          error.response.status || 500,
+        ),
       );
     }
     return next(new ErrorResponse(error.message || "Server Error", 500));
@@ -70,7 +70,7 @@ exports.confirmBvn = asyncHandler(async (req, res, next) => {
           bvnVerified: true,
           $inc: { accountBalance: -1000 },
         },
-        { new: true }
+        { new: true },
       );
 
       res.status(200).json({ success: true, data: savedUser });
@@ -81,8 +81,8 @@ exports.confirmBvn = asyncHandler(async (req, res, next) => {
       return next(
         new ErrorResponse(
           error.response.data.message || "Strowallet BVN confirmation failed",
-          error.response.status || 500
-        )
+          error.response.status || 500,
+        ),
       );
     }
     return next(new ErrorResponse(error.message || "Server Error", 500));
@@ -127,7 +127,7 @@ exports.verifyNin = asyncHandler(async (req, res, next) => {
           ninProvided: true,
           $inc: { accountBalance: -1000 },
         },
-        { new: true }
+        { new: true },
       );
 
       res.status(200).json({ success: true, data: savedUser });
@@ -138,8 +138,8 @@ exports.verifyNin = asyncHandler(async (req, res, next) => {
       return next(
         new ErrorResponse(
           error.response.data.message || "Strowallet NIN verification failed",
-          error.response.status || 500
-        )
+          error.response.status || 500,
+        ),
       );
     }
     return next(new ErrorResponse(error.message || "Server Error", 500));
@@ -171,8 +171,8 @@ exports.verifyCac = asyncHandler(async (req, res, next) => {
       return next(
         new ErrorResponse(
           "Insufficient USDT balance (minimum $15 required)",
-          400
-        )
+          400,
+        ),
       );
     }
 
@@ -220,7 +220,7 @@ exports.verifyCac = asyncHandler(async (req, res, next) => {
           cacProvided: true,
           $inc: { accountBalance: -5500 },
         },
-        { new: true }
+        { new: true },
       );
 
       res.status(200).json({ success: true, data: savedUser });
@@ -231,8 +231,8 @@ exports.verifyCac = asyncHandler(async (req, res, next) => {
       return next(
         new ErrorResponse(
           error.response.data.message || "Strowallet NIN verification failed",
-          error.response.status || 500
-        )
+          error.response.status || 500,
+        ),
       );
     }
     return next(new ErrorResponse(error.message || "Server Error", 500));
@@ -240,66 +240,112 @@ exports.verifyCac = asyncHandler(async (req, res, next) => {
 });
 
 exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user.id);
+  const UPGRADE_FEE = 5500;
+  const MIN_ACCOUNT_BALANCE = 5000;
+  const MIN_USDT_BALANCE = 15;
+
+  const user = await User.findById(req.user.id).populate("corporateBiz");
   if (!user) {
     return next(new ErrorResponse("User not found", 404));
   }
 
-  if (!user.usdtBalance || user.usdtBalance < 15) {
+  if (!user.usdtBalance || user.usdtBalance < MIN_USDT_BALANCE) {
     return next(
-      new ErrorResponse("Insufficient USDT balance (minimum $15 required)", 400)
+      new ErrorResponse(
+        `Insufficient USDT balance (minimum $${MIN_USDT_BALANCE} required)`,
+        400,
+      ),
     );
   }
 
-  // Only require balance checks and deduction when user does NOT have a corporateBiz
-  const requiresDeduction = !user.corporateBiz;
-
-  if (requiresDeduction) {
-    if (user.accountBalance < 5000) {
-      return next(new ErrorResponse("Insufficient Funds", 400));
+  // Guard against re-upgrading or duplicate pending requests
+  if (user.corporateBiz) {
+    if (user.corporateBiz.status === "verified") {
+      return next(
+        new ErrorResponse("This account has already been upgraded", 400),
+      );
     }
-
-    if (user.accountBalance - 5500 < 5000) {
-      return next(new ErrorResponse("Insufficient Funds after deduction", 400));
+    if (["unverified", "pending"].includes(user.corporateBiz.status)) {
+      return next(
+        new ErrorResponse(
+          "A cooperative verification request is already awaiting review",
+          400,
+        ),
+      );
     }
+    // status === "declined" -> falls through, allowed to resubmit
   }
 
-  const { business_name, account_number, bank_name } = req.body;
+  // Only charge the upgrade fee the first time. A resubmission after a
+  // decline does not get re-charged.
+  const requiresDeduction = !user.corporateBiz;
+
+  if (
+    requiresDeduction &&
+    user.accountBalance - UPGRADE_FEE < MIN_ACCOUNT_BALANCE
+  ) {
+    return next(
+      new ErrorResponse(
+        `Insufficient funds. A minimum balance of ${MIN_ACCOUNT_BALANCE} must remain after the ${UPGRADE_FEE} upgrade fee`,
+        400,
+      ),
+    );
+  }
+
+  // Whitelist only the fields CorporateBiz actually expects, rather than
+  // spreading req.body directly.
+  const {
+    businessName,
+    accountNumber,
+    accountName,
+    bankName,
+    cooperativeType,
+    corporativeName,
+    certificateNumber,
+    profileNumber,
+    verificationCode,
+    memberNumber,
+    chairmanDetails,
+    secretaryDetails,
+  } = req.body;
+
+  // If resubmitting after a decline, keep the old record for history
+  // instead of letting it become orphaned.
+  if (user.corporateBiz && user.corporateBiz.status === "declined") {
+    user.cooperatives.push(user.corporateBiz._id);
+  }
 
   const corporateBiz = await CorporateBiz.create({
-    businessName: business_name,
-    accountNumber: account_number,
-    bankName: bank_name,
-    accountName: req.body.accountName,
-    cooperativeType: req.body.cooperativeType,
-    corporativeName: req.body.corporativeName,
-    certificateNumber: req.body.certificateNumber,
-    profileNumber: req.body.profileNumber,
-    verificationCode: req.body.verificationCode,
-    memberNumber: req.body.memberNumber,
-    chairmanDetails: req.body.chairmanDetails,
-    secretaryDetails: req.body.secretaryDetails,
-    user: req.user.id,
-    status: "pending",
+    businessName,
+    accountNumber,
+    accountName,
+    bankName,
+    cooperativeType,
+    corporativeName,
+    certificateNumber,
+    profileNumber,
+    verificationCode,
+    memberNumber,
+    chairmanDetails,
+    secretaryDetails,
+    user: user._id,
+    purpose: "upgrade",
+    status: "unverified",
   });
-
-  await corporateBiz.save();
 
   const updatePayload = {
     corporateBiz: corporateBiz._id,
     isKYC: "pending",
+    cooperatives: user.cooperatives, // carries forward the pushed history, if any
   };
 
-  // Deduct only if user does not already have a corporateBiz
   if (requiresDeduction) {
-    updatePayload.$inc = { accountBalance: -5500 };
+    updatePayload.$inc = { accountBalance: -UPGRADE_FEE };
   }
 
-  const updatedUser = await User.findByIdAndUpdate(
-    req.user.id,
-    updatePayload,
-    { new: true } // returns the updated user
-  ).populate("corporateBiz");
+  const updatedUser = await User.findByIdAndUpdate(req.user.id, updatePayload, {
+    new: true,
+  }).populate("corporateBiz");
 
   res.status(200).json({ success: true, data: updatedUser });
 });
