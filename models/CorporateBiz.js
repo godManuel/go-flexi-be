@@ -42,8 +42,9 @@ const corporateBiz = new mongoose.Schema(
     profileNumber: String,
     verificationCode: String,
     memberNumber: String,
-    chairmanDetails: personnelSchema,
+    directorDetails: personnelSchema,
     secretaryDetails: personnelSchema,
+    treasurerDetails: personnelSchema,
   },
   { timestamps: true },
 );
