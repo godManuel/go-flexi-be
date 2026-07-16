@@ -31,6 +31,7 @@ const corporateBiz = new mongoose.Schema(
       type: String,
       enum: [
         "smedan",
+        "business",
         "cooperative-owner",
         "cooperative-member",
         "solo-cooperative",
