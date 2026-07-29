@@ -240,9 +240,9 @@ exports.verifyCac = asyncHandler(async (req, res, next) => {
 });
 
 exports.verifyCorporateBusiness = asyncHandler(async (req, res, next) => {
-  const UPGRADE_FEE = 5500;
-  const MIN_ACCOUNT_BALANCE = 5000;
-  const MIN_USDT_BALANCE = 15;
+  const UPGRADE_FEE = parseFloat(process.env.UPGRADE_FEE);
+  const MIN_ACCOUNT_BALANCE = parseFloat(process.env.MIN_ACCOUNT_BALANCE);
+  const MIN_USDT_BALANCE = parseFloat(process.env.MIN_USDT_BALANCE);
 
   const user = await User.findById(req.user.id).populate("corporateBiz");
   if (!user) {
