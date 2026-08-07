@@ -59,7 +59,7 @@ app.use(hpp());
 */
 app.use("/auth", auth);
 app.use("/webhooks", webhooks);
-app.use("/transfer", transfer);
+// app.use("/transfer", transfer);
 app.use("/transactions", transactions);
 app.use("/users", users);
 app.use("/kyc", kyc);
