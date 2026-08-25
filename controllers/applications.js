@@ -3,6 +3,7 @@ const Application = require("../models/Application");
 const User = require("../models/User");
 const { uploadDocuments } = require("../utils/cloudinary");
 const { generateUsdAccountNumber } = require("../utils/generators");
+const { streamApprovedListPdf } = require("../utils/generateApprovedListPdf");
 
 const THRESHOLD = Number(process.env.DWC_APPROVAL_THRESHOLD) || 3000;
 
@@ -177,10 +178,50 @@ const rejectApplication = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Step 4 - generate/download the current approved-users PDF list
+//          for a given upgradeType group
+// @route   GET /api/admin/approved-list?upgradeType=SMEDAN_CAC
+const getApprovedListPdf = asyncHandler(async (req, res) => {
+  const { upgradeType } = req.query;
+  if (!["SMEDAN_CAC", "BUSINESS_COOPERATIVE"].includes(upgradeType)) {
+    res.status(400);
+    throw new Error("upgradeType must be SMEDAN_CAC or BUSINESS_COOPERATIVE");
+  }
+
+  const users = await User.find({ upgradeType, isOnApprovedList: true }).sort({
+    approvedAt: 1,
+  });
+
+  streamApprovedListPdf(res, { upgradeType, users });
+});
+
+// @desc    Plain JSON status of both approved lists and threshold progress
+// @route   GET /api/admin/approved-list/status
+const getApprovedListStatus = asyncHandler(async (req, res) => {
+  const groups = ["SMEDAN_CAC", "BUSINESS_COOPERATIVE"];
+  const status = {};
+
+  for (const upgradeType of groups) {
+    const count = await User.countDocuments({
+      upgradeType,
+      isOnApprovedList: true,
+    });
+    status[upgradeType] = {
+      approvedCount: count,
+      threshold: THRESHOLD,
+      claimButtonEnabled: count >= THRESHOLD,
+    };
+  }
+
+  res.json({ success: true, data: status });
+});
+
 module.exports = {
   listApplications,
   submitApplication,
   getMyApplications,
   approveApplication,
   rejectApplication,
+  getApprovedListPdf,
+  getApprovedListStatus,
 };
