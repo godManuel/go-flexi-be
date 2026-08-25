@@ -1,31 +1,20 @@
 const multer = require("multer");
 const path = require("path");
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
-});
+const storage = multer.memoryStorage();
+
+const allowedTypes = [".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx"];
 
 const fileFilter = (req, file, cb) => {
-  if (
-    file.mimetype === "image/jpeg" ||
-    file.mimetype === "image/jpg" ||
-    file.mimetype === "image/png"
-  ) {
-    cb(null, true);
-  } else {
-    cb({ message: "Unsupported file format" }, false);
-  }
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (allowedTypes.includes(ext)) return cb(null, true);
+  cb(new Error("Unsupported file type for DWC document upload"));
 };
 
 const upload = multer({
   storage,
-  limits: { fileSize: 1024 * 1024 },
   fileFilter,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
 
 module.exports = upload;

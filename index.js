@@ -21,6 +21,7 @@ const cableTv = require("./routes/cableTv");
 const electricity = require("./routes/electricity");
 const virtualCard = require("./routes/virtual-card");
 const corporateBusiness = require("./routes/corporate-business");
+const applications = require("./routes/applications");
 
 const path = require("path");
 
@@ -69,6 +70,7 @@ app.use("/cable-subscription", cableTv);
 app.use("/electricity", electricity);
 app.use("/virtual-card", virtualCard);
 app.use("/corporate-businesses", corporateBusiness);
+app.use("/applications", applications);
 
 /*
 |--------------------------------------------------------------------------

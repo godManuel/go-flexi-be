@@ -1,6 +1,7 @@
 // Require express and the User model
 const Transaction = require("../models/Transaction");
 const User = require("../models/User");
+const axios = require("axios");
 const UsdTrx = require("../models/USDTrx");
 const Deposit = require("../models/Deposit");
 const Transfer = require("../models/Transfer");
@@ -789,6 +790,374 @@ exports.addNumbers = asyncHandler(async (req, res, next) => {
     message: "Identification numbers updated successfully",
     user: updatedUser,
   });
+});
+
+exports.migrateUsersToSterling = asyncHandler(async (req, res, next) => {
+  const BATCH_SIZE = 5;
+  const DELAY_BETWEEN_REQUESTS = 500; // 500ms
+
+  let processed = 0;
+  let successful = 0;
+  let failed = 0;
+
+  try {
+    // --------------------------------------------------
+    // 1. Count users that still need migration
+    // --------------------------------------------------
+
+    const totalUsers = await User.countDocuments({
+      sterlingMigrationStatus: { $ne: "success" },
+    });
+
+    console.log("========================================");
+    console.log("STERLING ACCOUNT MIGRATION STARTED");
+    console.log("========================================");
+    console.log(`Users remaining: ${totalUsers}`);
+    console.log(`Batch size: ${BATCH_SIZE}`);
+    console.log("========================================");
+
+    // --------------------------------------------------
+    // 2. Process users in batches
+    // --------------------------------------------------
+
+    while (true) {
+      const users = await User.find({
+        sterlingMigrationStatus: { $ne: "success" },
+      })
+        .sort({ _id: 1 })
+        .limit(BATCH_SIZE);
+
+      // No more users
+      if (users.length === 0) {
+        break;
+      }
+
+      console.log("\n");
+      console.log("========================================");
+      console.log(`PROCESSING BATCH OF ${users.length}`);
+      console.log("========================================");
+
+      // --------------------------------------------------
+      // 3. Process each user
+      // --------------------------------------------------
+
+      for (const user of users) {
+        processed++;
+
+        console.log("\n----------------------------------------");
+        console.log(`[${processed}/${totalUsers}] ${user.fullName}`);
+        console.log(`Email: ${user.email}`);
+        console.log(`Old Account: ${user.accountNumber}`);
+        console.log("----------------------------------------");
+
+        // --------------------------------------------------
+        // 4. Skip if somehow already migrated
+        // --------------------------------------------------
+
+        if (user.sterlingMigrationStatus === "success") {
+          console.log("⏭️ Already migrated. Skipping...");
+          continue;
+        }
+
+        // --------------------------------------------------
+        // 5. Validate required user information
+        // --------------------------------------------------
+
+        if (!user.fullName || !user.email || !user.phoneNumber) {
+          failed++;
+
+          const errorMessage = "Missing fullName, email or phoneNumber";
+
+          console.log(`❌ ${errorMessage}`);
+
+          await User.updateOne(
+            { _id: user._id },
+            {
+              $set: {
+                sterlingMigrationStatus: "failed",
+                sterlingMigrationError: errorMessage,
+              },
+            },
+          );
+
+          continue;
+        }
+
+        // --------------------------------------------------
+        // 6. Mark user as processing
+        // --------------------------------------------------
+
+        await User.updateOne(
+          { _id: user._id },
+          {
+            $set: {
+              sterlingMigrationStatus: "processing",
+              sterlingMigrationError: null,
+            },
+          },
+        );
+
+        // --------------------------------------------------
+        // 7. Prepare StroWallet payload
+        // --------------------------------------------------
+
+        const payload = {
+          account_name: user.fullName,
+          email: user.email,
+          phone: user.phoneNumber,
+          public_key: process.env.STROWALLET_PUBLIC_KEY,
+          webhook_url:
+            "https://go-flexi-be-zmy7.onrender.com/webhooks/strowallet",
+        };
+
+        try {
+          console.log("Creating Sterling account...");
+
+          // --------------------------------------------------
+          // 8. Call StroWallet API
+          // --------------------------------------------------
+
+          const response = await axios.post(
+            "https://strowallet.com/api/virtual-bank/amucha",
+            payload,
+            {
+              headers: {
+                Authorization: `Bearer ${process.env.STROWALLET_PUBLIC_KEY}`,
+                "Content-Type": "application/json",
+              },
+              timeout: 30000,
+            },
+          );
+
+          const result = response.data;
+
+          console.log("StroWallet response:", result);
+
+          // --------------------------------------------------
+          // 9. Check API response
+          // --------------------------------------------------
+
+          if (!result.success) {
+            failed++;
+
+            const errorMessage =
+              result.message || "StroWallet account creation failed";
+
+            console.log(`❌ ${errorMessage}`);
+
+            await User.updateOne(
+              { _id: user._id },
+              {
+                $set: {
+                  sterlingMigrationStatus: "failed",
+                  sterlingMigrationError: errorMessage,
+                },
+              },
+            );
+
+            continue;
+          }
+
+          // --------------------------------------------------
+          // 10. Validate returned account information
+          // --------------------------------------------------
+
+          if (
+            !result.account_number ||
+            !result.bank_name ||
+            !result.account_name
+          ) {
+            failed++;
+
+            const errorMessage =
+              "StroWallet returned incomplete account details";
+
+            console.log(`❌ ${errorMessage}`);
+
+            await User.updateOne(
+              { _id: user._id },
+              {
+                $set: {
+                  sterlingMigrationStatus: "failed",
+                  sterlingMigrationError: errorMessage,
+                },
+              },
+            );
+
+            continue;
+          }
+
+          // --------------------------------------------------
+          // 11. IMPORTANT:
+          // Make sure this is actually Sterling Bank
+          // --------------------------------------------------
+
+          const returnedBankName = result.bank_name.trim().toLowerCase();
+
+          if (!returnedBankName.includes("sterling")) {
+            failed++;
+
+            const errorMessage = `Expected Sterling Bank but received: ${result.bank_name}`;
+
+            console.log(`❌ ${errorMessage}`);
+
+            await User.updateOne(
+              { _id: user._id },
+              {
+                $set: {
+                  sterlingMigrationStatus: "failed",
+                  sterlingMigrationError: errorMessage,
+                },
+              },
+            );
+
+            continue;
+          }
+
+          // --------------------------------------------------
+          // 12. Save the old account information
+          // --------------------------------------------------
+
+          const previousAccountNumber = user.accountNumber;
+
+          const previousBankName = user.bankName;
+
+          const previousAccountName = user.accountName;
+
+          // --------------------------------------------------
+          // 13. Update user with new Sterling account
+          // --------------------------------------------------
+
+          await User.updateOne(
+            {
+              _id: user._id,
+
+              // Prevent accidental overwrite if another
+              // process migrated the user simultaneously.
+              sterlingMigrationStatus: "processing",
+            },
+            {
+              $set: {
+                // New account
+                accountNumber: result.account_number,
+
+                bankName: result.bank_name,
+
+                accountName: result.account_name,
+
+                // Migration tracking
+                sterlingMigrationStatus: "success",
+
+                sterlingMigrationError: null,
+
+                sterlingAccountCreatedAt: new Date(),
+
+                // Old account information
+                previousAccountNumber: previousAccountNumber,
+
+                previousBankName: previousBankName,
+
+                previousAccountName: previousAccountName,
+              },
+            },
+          );
+
+          successful++;
+
+          console.log("\n✅ MIGRATION SUCCESSFUL");
+          console.log(`User: ${user.fullName}`);
+          console.log(`Old Account: ${previousAccountNumber}`);
+          console.log(`New Account: ${result.account_number}`);
+          console.log(`Bank: ${result.bank_name}`);
+          console.log(`Account Name: ${result.account_name}`);
+        } catch (error) {
+          failed++;
+
+          const apiError =
+            error.response?.data?.message ||
+            error.response?.data ||
+            error.message ||
+            "Unknown StroWallet error";
+
+          console.error(`❌ StroWallet API error for ${user.email}:`, apiError);
+
+          await User.updateOne(
+            { _id: user._id },
+            {
+              $set: {
+                sterlingMigrationStatus: "failed",
+                sterlingMigrationError:
+                  typeof apiError === "string"
+                    ? apiError
+                    : JSON.stringify(apiError),
+              },
+            },
+          );
+        }
+
+        // --------------------------------------------------
+        // 14. Delay before next API request
+        // --------------------------------------------------
+
+        await new Promise((resolve) =>
+          setTimeout(resolve, DELAY_BETWEEN_REQUESTS),
+        );
+      }
+
+      // --------------------------------------------------
+      // 15. Batch summary
+      // --------------------------------------------------
+
+      console.log("\n");
+      console.log("========================================");
+      console.log("BATCH COMPLETED");
+      console.log("========================================");
+      console.log(`Processed: ${processed}`);
+      console.log(`Successful: ${successful}`);
+      console.log(`Failed: ${failed}`);
+      console.log(
+        "Remaining:",
+        await User.countDocuments({
+          sterlingMigrationStatus: { $ne: "success" },
+        }),
+      );
+      console.log("========================================");
+    }
+
+    // --------------------------------------------------
+    // 16. Final statistics
+    // --------------------------------------------------
+
+    const remaining = await User.countDocuments({
+      sterlingMigrationStatus: { $ne: "success" },
+    });
+
+    console.log("\n");
+    console.log("========================================");
+    console.log("STERLING MIGRATION COMPLETED");
+    console.log("========================================");
+    console.log(`Total processed: ${processed}`);
+    console.log(`Successful: ${successful}`);
+    console.log(`Failed: ${failed}`);
+    console.log(`Remaining: ${remaining}`);
+    console.log("========================================");
+
+    return res.status(200).json({
+      success: true,
+      message: "Sterling account migration completed",
+      statistics: {
+        totalUsers,
+        processed,
+        successful,
+        failed,
+        remaining,
+      },
+    });
+  } catch (error) {
+    console.error("Fatal migration error:", error);
+
+    return next(new ErrorResponse("Sterling account migration failed", 500));
+  }
 });
 
 // exports.batchCreateUSDTAddresses = async (

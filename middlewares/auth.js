@@ -37,3 +37,17 @@ exports.authorize = (...roles) => {
     next();
   };
 };
+
+exports.requireDwcMerchant = async (req, res, next) => {
+  const user = await User.findById(req.user.id);
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  if (user?.tier !== "merchant" || !user?.merchantVerificationCode) {
+    res.status(403);
+    throw new Error("A valid DWC code is required to access this resource");
+  }
+  next();
+};

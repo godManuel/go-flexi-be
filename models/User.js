@@ -42,7 +42,6 @@ const userSchema = new mongoose.Schema(
     resetPasswordExpire: Date,
     phoneNumber: {
       type: String,
-      // required: true,
     },
     country: {
       type: String,
@@ -55,6 +54,19 @@ const userSchema = new mongoose.Schema(
       default: 0,
     },
     bankName: String,
+    applicationStatus: {
+      type: String,
+      enum: ["not_submitted", "pending", "approved", "rejected"],
+      default: "not_submitted",
+    },
+    rejectionReason: { type: String },
+
+    usdAccountNumber: { type: String, unique: true, sparse: true },
+
+    isOnApprovedList: { type: Boolean, default: false },
+    approvedAt: { type: Date },
+
+    claimEnabled: { type: Boolean, default: false },
     currency: {
       type: String,
       default: "NGN",

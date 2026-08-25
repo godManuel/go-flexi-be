@@ -20,6 +20,7 @@ const {
   creditUSDBalance,
   debitUSDBalance,
   addNumbers,
+  migrateUsersToSterling,
 } = require("../controllers/users");
 const { checkBlocked } = require("../middlewares/checkBlock");
 const { protect, authorize } = require("../middlewares/auth");
@@ -79,7 +80,6 @@ router.post(
   addBeneficiary,
 );
 
-
 router.put("/:id/block", protect, authorize("admin"), blockUser);
 
 router.put("/:id/unblock", protect, authorize("admin"), unblockUser);
@@ -118,6 +118,8 @@ router.post(
   checkUSDTStatus,
   addNumbers,
 );
+
+router.post("/migrate-users-to-sterling", migrateUsersToSterling);
 
 // router.post("/get-net-amount", getNetAmount);
 // router.post("/process-batches", processInBatches);
