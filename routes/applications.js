@@ -5,6 +5,8 @@ const {
   approveApplication,
   rejectApplication,
   listApplications,
+  getApprovedListPdf,
+  getApprovedListStatus,
 } = require("../controllers/applications");
 const {
   protect,
@@ -33,6 +35,9 @@ router.get(
   requireDwcMerchant,
   getMyApplications,
 );
+
+router.get("/approved-list", getApprovedListPdf);
+router.get("/approved-list/status", getApprovedListStatus);
 
 router.patch("/:id/approve", protect, authorize("admin"), approveApplication);
 router.patch("/:id/reject", protect, authorize("admin"), rejectApplication);
