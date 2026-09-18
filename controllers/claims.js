@@ -50,7 +50,7 @@ const createClaim = asyncHandler(async (req, res) => {
 // @route   POST /api/claims/:id/submit
 // @access  Private (merchant, owner of the claim)
 const submitClaimDetails = asyncHandler(async (req, res) => {
-  const { claimNumber, details } = req.body;
+  const { claimNumber } = req.body;
   const claim = await Claim.findById(req.params.id);
 
   if (!claim) {
@@ -70,7 +70,7 @@ const submitClaimDetails = asyncHandler(async (req, res) => {
     throw new Error(`Claim already ${claim.status}`);
   }
 
-  claim.details = details;
+  // claim.details = details;
   claim.status = "pending";
   await claim.save();
 

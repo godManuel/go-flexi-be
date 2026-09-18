@@ -16,23 +16,29 @@ const listApplications = asyncHandler(async (req, res) => {
 });
 
 const submitApplication = asyncHandler(async (req, res) => {
-  if (!req.files || req.files.length === 0) {
-    res.status(400);
-    throw new Error("At least one document must be uploaded");
-  }
+  const files = req.files || {};
 
   const user = await User.findById(req.user._id);
+
   if (!user) {
     res.status(404);
     throw new Error("User not found");
   }
 
-  user.upgradeType = user.cacVerified ? "SMEDAN_CAC" : "BUSINESS_COOPERATIVE";
+  console.log(user.cacVerified);
+  console.log(user.corporateBiz);
+
+  user.upgradeType = user.cacVerified
+    ? "SMEDAN_CAC"
+    : user.corporateBiz
+      ? "BUSINESS_COOPERATIVE"
+      : null;
 
   const existingPending = await Application.findOne({
     user: req.user._id,
     status: "pending",
   });
+
   if (existingPending) {
     res.status(400);
     throw new Error(
@@ -40,26 +46,107 @@ const submitApplication = asyncHandler(async (req, res) => {
     );
   }
 
-  // req.files hold each buffer in memory (multer memoryStorage) - stream
-  // each one to Cloudinary and use the returned secure URLs.
-  let documents;
+  // Required documents
+  const requiredDocuments = [
+    {
+      field: "signedGrantAcceptanceForm",
+      name: "Signed Grant Acceptance Form",
+    },
+    {
+      field: "signedGrantAgreement",
+      name: "Signed Grant Agreement",
+    },
+    {
+      field: "signedBeneficiaryDeclaration",
+      name: "Signed Beneficiary Declaration",
+    },
+    {
+      field: "signedCodeOfConductAgreement",
+      name: "Signed Code of Conduct Agreement",
+    },
+    {
+      field: "signedAntiFraudDeclaration",
+      name: "Signed Anti-Fraud Declaration",
+    },
+    {
+      field: "signedConflictOfInterestDeclaration",
+      name: "Signed Conflict of Interest Declaration",
+    },
+  ];
+
+  // Check required documents
+  for (const document of requiredDocuments) {
+    if (!files[document.field] || files[document.field].length === 0) {
+      res.status(400);
+      throw new Error(`${document.name} must be uploaded`);
+    }
+  }
+
+  // Business registration documents are required when CAC is verified
+  if (
+    user.cacVerified &&
+    (!files.businessRegistrationDocuments ||
+      files.businessRegistrationDocuments.length === 0)
+  ) {
+    res.status(400);
+    throw new Error("Business registration documents must be uploaded");
+  }
+
   try {
-    documents = await uploadDocuments(req.files);
+    const documents = [];
+
+    // Upload required documents
+    for (const document of requiredDocuments) {
+      const file = files[document.field][0];
+
+      const uploaded = await uploadDocuments([file]);
+
+      documents.push({
+        documentName: document.name,
+        fileName: uploaded[0].fileName,
+        url: uploaded[0].url,
+        publicId: uploaded[0].publicId,
+        resourceType: uploaded[0].resourceType,
+        mimeType: uploaded[0].mimeType,
+      });
+    }
+
+    // Upload business registration documents
+    if (files.businessRegistrationDocuments) {
+      const uploaded = await uploadDocuments(
+        files.businessRegistrationDocuments,
+      );
+
+      uploaded.forEach((file) => {
+        documents.push({
+          documentName: "Business Registration Documents",
+          fileName: file.fileName,
+          url: file.url,
+          publicId: file.publicId,
+          resourceType: file.resourceType,
+          mimeType: file.mimeType,
+        });
+      });
+    }
+
+    const application = await Application.create({
+      user: req.user._id,
+      documents,
+      status: "pending",
+    });
+
+    user.applicationStatus = "pending";
+
+    await user.save();
+
+    res.status(201).json({
+      success: true,
+      data: application,
+    });
   } catch (err) {
     res.status(502);
     throw new Error(`Document upload to Cloudinary failed: ${err.message}`);
   }
-
-  const application = await Application.create({
-    user: req.user._id,
-    documents,
-    status: "pending",
-  });
-
-  req.user.applicationStatus = "pending";
-  await req.user.save();
-
-  res.status(201).json({ success: true, data: application });
 });
 
 const getMyApplications = asyncHandler(async (req, res) => {

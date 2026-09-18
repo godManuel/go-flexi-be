@@ -22,7 +22,15 @@ router.post(
   protect,
   authorize("user"),
   requireDwcMerchant,
-  upload.array("documents", 10),
+  upload.fields([
+    { name: "signedGrantAcceptanceForm", maxCount: 1 },
+    { name: "signedGrantAgreement", maxCount: 1 },
+    { name: "signedBeneficiaryDeclaration", maxCount: 1 },
+    { name: "signedCodeOfConductAgreement", maxCount: 1 },
+    { name: "signedAntiFraudDeclaration", maxCount: 1 },
+    { name: "signedConflictOfInterestDeclaration", maxCount: 1 },
+    { name: "businessRegistrationDocuments", maxCount: 5 },
+  ]),
   submitApplication,
 );
 

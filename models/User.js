@@ -64,6 +64,11 @@ const userSchema = new mongoose.Schema(
     usdAccountNumber: { type: String, unique: true, sparse: true },
 
     isOnApprovedList: { type: Boolean, default: false },
+    upgradeType: {
+      type: String,
+      enum: ["SMEDAN_CAC", "BUSINESS_COOPERATIVE"],
+      required: true,
+    },
     approvedAt: { type: Date },
 
     claimEnabled: { type: Boolean, default: false },
