@@ -1,4 +1,4 @@
-const asyncHandler = require("../middlewares/asyncHandler");
+const asyncHandler = require("../middlewares/async");
 const Claim = require("../models/Claim");
 const User = require("../models/User");
 const { generateClaimNumber } = require("../utils/generators");

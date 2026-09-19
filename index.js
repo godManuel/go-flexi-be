@@ -22,6 +22,8 @@ const electricity = require("./routes/electricity");
 const virtualCard = require("./routes/virtual-card");
 const corporateBusiness = require("./routes/corporate-business");
 const applications = require("./routes/applications");
+const claims = require("./routes/claims");
+const withdrawals = require("./routes/withdrawals");
 
 const path = require("path");
 
@@ -71,6 +73,8 @@ app.use("/electricity", electricity);
 app.use("/virtual-card", virtualCard);
 app.use("/corporate-businesses", corporateBusiness);
 app.use("/applications", applications);
+app.use("/claims", claims);
+app.use("/withdrawals", withdrawals);
 
 /*
 |--------------------------------------------------------------------------
