@@ -10,7 +10,7 @@ const THRESHOLD = Number(process.env.DWC_APPROVAL_THRESHOLD) || 3000;
 const listApplications = asyncHandler(async (req, res) => {
   const { status = "pending" } = req.query;
   const applications = await Application.find({ status })
-    .populate("user", "name email dwcCode upgradeType")
+    .populate("user", "fullName email merchantVerificationCode upgradeType")
     .sort({ createdAt: 1 });
   res.json({ success: true, count: applications.length, data: applications });
 });
