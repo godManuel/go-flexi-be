@@ -2,6 +2,7 @@ const asyncHandler = require("../middlewares/async");
 const Claim = require("../models/Claim");
 const User = require("../models/User");
 const { generateClaimNumber } = require("../utils/generators");
+const ErrorResponse = require("../utils/errorResponse");
 
 // @desc    Check whether the claim button is enabled for the logged-in user
 // @route   GET /api/claims/status
@@ -15,6 +16,13 @@ const getClaimStatus = asyncHandler(async (req, res) => {
       upgradeType: req.user.upgradeType,
     },
   });
+});
+
+const getClaim = asyncHandler(async (req, res, next) => {
+  const claim = await Claim.findById(req.params.id);
+  if (!claim) return next(new ErrorResponse("Claim not found", 404));
+
+  res.status(200).json({ data: claim });
 });
 
 // @desc    Step 6 (part 1) - user clicks the claim button, a unique claim
@@ -141,6 +149,7 @@ const declineClaim = asyncHandler(async (req, res) => {
 
 module.exports = {
   getClaimStatus,
+  getClaim,
   createClaim,
   submitClaimDetails,
   listClaims,
