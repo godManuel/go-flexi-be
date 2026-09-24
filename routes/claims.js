@@ -15,7 +15,7 @@ const router = express.Router();
 router.use(protect);
 
 router.get("/status", getClaimStatus);
-router.get("/:id", getClaim);
+router.get("/", getClaim);
 router.post("/", createClaim);
 router.post("/:id/submit", submitClaimDetails);
 router.get("/", authorize("admin"), listClaims);

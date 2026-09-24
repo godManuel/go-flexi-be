@@ -19,7 +19,7 @@ const getClaimStatus = asyncHandler(async (req, res) => {
 });
 
 const getClaim = asyncHandler(async (req, res, next) => {
-  const claim = await Claim.findById(req.params.id);
+  const claim = await Claim.findOne({ user: req.user.id });
   if (!claim) return next(new ErrorResponse("Claim not found", 404));
 
   res.status(200).json({ data: claim });
