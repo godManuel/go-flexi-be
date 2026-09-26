@@ -2,6 +2,7 @@ const express = require("express");
 const {
   requestWithdrawal,
   confirmWithdrawal,
+  listWithdrawals,
 } = require("../controllers/withdrawals");
 const { protect, authorize } = require("../middlewares/auth");
 
@@ -11,5 +12,6 @@ router.use(protect);
 
 router.post("/", requestWithdrawal);
 router.post("/:id/confirm", confirmWithdrawal);
+router.get("/", authorize("admin"), listWithdrawals);
 
 module.exports = router;

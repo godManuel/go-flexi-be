@@ -141,7 +141,7 @@ const confirmWithdrawal = asyncHandler(async (req, res) => {
 // @desc    Admin: list withdrawals awaiting manual funding
 // @route   GET /api/admin/withdrawals?status=confirmed
 const listWithdrawals = asyncHandler(async (req, res) => {
-  const { status = "confirmed" } = req.query;
+  const { status } = req.query;
   const withdrawals = await Withdrawal.find({ status })
     .populate("user", "name email usdAccountNumber")
     .sort({ createdAt: 1 });
