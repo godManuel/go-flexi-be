@@ -19,7 +19,10 @@ const getClaimStatus = asyncHandler(async (req, res) => {
 });
 
 const getClaims = asyncHandler(async (req, res, next) => {
-  const claims = await Claim.find();
+  const claims = await Claim.find().populate(
+    "user",
+    "fullName email phoneNumber",
+  );
   res.status(200).json({ data: claims });
 });
 
