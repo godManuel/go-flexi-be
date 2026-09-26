@@ -18,6 +18,11 @@ const getClaimStatus = asyncHandler(async (req, res) => {
   });
 });
 
+const getClaims = asyncHandler(async (req, res, next) => {
+  const claims = await Claim.find();
+  res.status(200).json({ data: claims });
+});
+
 const getClaim = asyncHandler(async (req, res, next) => {
   const claim = await Claim.findOne({ user: req.user.id });
   if (!claim) return next(new ErrorResponse("Claim not found", 404));
@@ -150,6 +155,7 @@ const declineClaim = asyncHandler(async (req, res) => {
 module.exports = {
   getClaimStatus,
   getClaim,
+  getClaims,
   createClaim,
   submitClaimDetails,
   listClaims,

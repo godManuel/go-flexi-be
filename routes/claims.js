@@ -2,6 +2,7 @@ const express = require("express");
 const {
   getClaimStatus,
   getClaim,
+  getClaims,
   createClaim,
   submitClaimDetails,
   listClaims,
@@ -15,7 +16,8 @@ const router = express.Router();
 router.use(protect);
 
 router.get("/status", getClaimStatus);
-router.get("/", getClaim);
+router.get("/claim", getClaim);
+router.get("/", authorize("admin"), getClaims);
 router.post("/", createClaim);
 router.post("/:id/submit", submitClaimDetails);
 router.get("/", authorize("admin"), listClaims);
