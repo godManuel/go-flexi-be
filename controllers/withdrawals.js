@@ -3,10 +3,19 @@ const Claim = require("../models/Claim");
 const Withdrawal = require("../models/Withdrawal");
 const { generateAuthCode } = require("../utils/generators");
 const { sendFundingNotification } = require("../utils/sendEmail");
+const ErrorResponse = require("../utils/errorResponse");
 
 const MIN = Number(process.env.WITHDRAWAL_MIN) || 2;
 const MAX = Number(process.env.WITHDRAWAL_MAX) || 1000;
 const AUTH_CODE_TTL_MIN = Number(process.env.AUTH_CODE_EXPIRES_MINUTES) || 15;
+
+const listWithdrawal = asyncHandler(async (req, res, next) => {
+  const withdrawal = await Withdrawal.findOne({ user: req.user.id });
+  if (!withdrawal)
+    return next(new ErrorResponse("You haven't made any withdrawals"));
+
+  res.status(200).json({ data: withdrawal });
+});
 
 const requestWithdrawal = asyncHandler(async (req, res) => {
   const { claimId, amount, accountDetails } = req.body;
@@ -185,6 +194,7 @@ const fundWithdrawal = asyncHandler(async (req, res) => {
 module.exports = {
   requestWithdrawal,
   confirmWithdrawal,
+  listWithdrawal,
   listWithdrawals,
   fundWithdrawal,
 };

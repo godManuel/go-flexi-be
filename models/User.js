@@ -62,6 +62,7 @@ const userSchema = new mongoose.Schema(
     rejectionReason: { type: String },
 
     usdAccountNumber: { type: String, unique: true, sparse: true },
+    usdAccountBalance: { type: Number, default: 0 },
 
     isOnApprovedList: { type: Boolean, default: false },
     upgradeType: {
