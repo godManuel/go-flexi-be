@@ -68,7 +68,6 @@ const userSchema = new mongoose.Schema(
     upgradeType: {
       type: String,
       enum: ["SMEDAN_CAC", "BUSINESS_COOPERATIVE"],
-      required: true,
     },
     approvedAt: { type: Date },
 
